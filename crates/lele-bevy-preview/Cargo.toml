@@ -1,0 +1,41 @@
+[package]
+name = "lele-bevy-preview"
+version.workspace = true
+edition = "2024"
+description = "Deterministic headless PNG/MP4 UI previews for Bevy plugins, with change-gated Telegram delivery"
+license.workspace = true
+
+[lib]
+name = "lele_bevy_preview"
+
+[dependencies]
+bevy.workspace = true
+blake3.workspace = true
+derive_more.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+telegram-bot-helper.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints.clippy]
+pedantic = { level = "deny", priority = -1 }
+nursery = { level = "deny", priority = -1 }
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+exit = "deny"
+as_conversions = "deny"
+arithmetic_side_effects = "deny"
+indexing_slicing = "deny"
+unchecked_time_subtraction = "deny"
+panic_in_result_fn = "deny"
+string_slice = "deny"
+unimplemented = "deny"
+todo = "deny"
+unreachable = "deny"
+module_inception = "allow"
+missing_errors_doc = "allow"

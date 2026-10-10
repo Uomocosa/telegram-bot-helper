@@ -1,0 +1,11 @@
+/target
+**/target/
+.devenv/
+.direnv/
+.pre-commit-config.yaml
+.pre-commit-config.json
+.local-run/
+.env
+.env.*
+*.env
+*.sync-conflict-*
