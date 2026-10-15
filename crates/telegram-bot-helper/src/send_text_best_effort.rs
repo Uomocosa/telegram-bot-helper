@@ -1,12 +1,12 @@
-use super::load_creds;
-use super::send_text;
+use crate::load_creds;
+use crate::send_text;
 
 pub fn send_text_best_effort(text: &str) {
-    let Some(creds) = load_creds::load_creds() else {
+    let Some(creds) = load_creds() else {
         eprintln!("telegram skipped (no creds): {text}");
         return;
     };
-    if let Err(err) = send_text::send_text(&creds, text) {
+    if let Err(err) = send_text(&creds, text) {
         eprintln!("telegram send failed: {err}");
     }
 }

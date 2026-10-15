@@ -2,19 +2,18 @@ use std::fs::File;
 use std::path::PathBuf;
 use std::sync::Mutex;
 
-use super::test_log_line;
-use super::test_log_open;
+use atomic_delegate_macros::atomic_delegates;
 
 pub struct TestLog {
     pub path: PathBuf,
     pub file: Mutex<Option<File>>,
 }
 
-#[rustfmt::skip]
+#[atomic_delegates]
 impl TestLog {
     #[must_use]
-    pub fn open(test_name: &str) -> Self { test_log_open::open(test_name) }
-    pub fn line(&self, message: &str) { test_log_line::line(self, message) }
+    pub fn open(test_name: &str) -> Self {}
+    pub fn line(&self, message: &str) {}
 }
 
 #[cfg(test)]

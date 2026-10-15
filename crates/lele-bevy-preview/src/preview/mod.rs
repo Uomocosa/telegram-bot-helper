@@ -1,5 +1,6 @@
 #[path = "__basic__/mod.rs"]
 pub mod basic;
+pub use basic::structs::RenderedState;
 pub mod config;
 pub use config::Config;
 

@@ -5,7 +5,6 @@ use crate::deliver;
 use crate::deliver::basic::enums::Media;
 use crate::deliver::basic::structs::Capture;
 
-/// Sends one capture on its own, or 2+ as a single Telegram album. Returns how many were sent.
 pub fn send_group(items: &[&Capture], caption: &str) -> Result<usize, Error> {
     let [only] = items else {
         return send_album(items, caption);

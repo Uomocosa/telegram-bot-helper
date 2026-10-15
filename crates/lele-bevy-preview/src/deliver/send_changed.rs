@@ -4,8 +4,6 @@ use crate::scene::Scene;
 
 const ALBUM_LIMIT: usize = 10;
 
-/// Sends the whole scene as one album when anything in it changed, so a before/after
-/// pair arrives together; stays silent when every capture is unchanged.
 pub fn send_changed(
     scene: &Scene,
     captures: &[deliver::Capture],

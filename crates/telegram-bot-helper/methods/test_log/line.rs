@@ -1,10 +1,10 @@
 use std::io::Write as _;
 
-use super::test_log::TestLog;
+use crate::TestLog;
 
-pub fn line(log: &TestLog, message: &str) {
+pub fn line(test_log: &TestLog, message: &str) {
     let stamped = format!("{:?} {message}", std::time::SystemTime::now());
-    write_line(log, &stamped);
+    write_line(test_log, &stamped);
     eprintln!("{stamped}");
 }
 
@@ -21,9 +21,8 @@ fn write_line(log: &TestLog, stamped: &str) {
 
 #[cfg(test)]
 mod tests {
-    use crate::test_log::TestLog;
-
     use super::line;
+    use crate::TestLog;
 
     #[test]
     fn test_usage() {

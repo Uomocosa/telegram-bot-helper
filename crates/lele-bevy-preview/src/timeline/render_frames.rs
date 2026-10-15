@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use crate::Error;
 use crate::deliver;
 use crate::preview;
@@ -10,7 +8,7 @@ use crate::timeline;
 pub fn render_frames(
     scene: &Scene,
     config: &preview::Config,
-) -> Result<Vec<(PathBuf, String)>, Error> {
+) -> Result<Vec<timeline::RenderedFrame>, Error> {
     scene::check::check(scene)?;
     let Some(spec) = scene.timeline.as_ref() else {
         return Ok(Vec::new());
@@ -32,7 +30,10 @@ pub fn render_frames(
             preview::once::once(&mut app, target.clone(), &path, config.max_capture_frames)?;
         let pixels = image.data.as_deref().unwrap_or_default();
         preview::ensure_visual::ensure_visual(pixels, &path, config.min_distinct_colors)?;
-        frames.push((path, deliver::hash_bytes::hash_bytes(pixels)));
+        frames.push(timeline::RenderedFrame {
+            path,
+            pixel_hash: deliver::hash_bytes::hash_bytes(pixels),
+        });
     }
     Ok(frames)
 }

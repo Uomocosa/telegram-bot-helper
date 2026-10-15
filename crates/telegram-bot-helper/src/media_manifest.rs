@@ -4,10 +4,6 @@ use crate::MediaItem;
 use crate::MediaKind;
 use crate::truncate_caption;
 
-/// Builds the `media` JSON array of a `sendMediaGroup` call.
-///
-/// Item `i` is uploaded as multipart part `file{i}`. Telegram shows one caption
-/// per album, taken from the first item, so only item 0 carries it.
 #[must_use]
 pub fn media_manifest(items: &[MediaItem], caption: &str) -> String {
     let entries: Vec<Value> = items

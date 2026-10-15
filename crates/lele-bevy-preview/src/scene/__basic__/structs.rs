@@ -1,7 +1,7 @@
 use bevy::ecs::world::World;
 use bevy::prelude::App;
 
-use crate::scene::basic::enums::Kind;
+use crate::scene;
 
 pub struct State {
     pub label: String,
@@ -17,7 +17,7 @@ pub struct Timeline {
 
 pub struct Scene {
     pub name: String,
-    pub kind: Kind,
+    pub kind: scene::Kind,
     pub build: fn(&mut App),
     pub states: Vec<State>,
     pub timeline: Option<Timeline>,

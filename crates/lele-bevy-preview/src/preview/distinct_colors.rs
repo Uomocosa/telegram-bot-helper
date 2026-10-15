@@ -3,7 +3,8 @@ use std::collections::HashSet;
 #[must_use]
 pub fn distinct_colors(pixels: &[u8]) -> usize {
     let mut seen: HashSet<u32> = HashSet::new();
-    for pixel in pixels.as_chunks::<4>().0 {
+    let (chunks, _) = pixels.as_chunks::<4>();
+    for pixel in chunks {
         seen.insert(u32::from_be_bytes(*pixel));
     }
     seen.len()

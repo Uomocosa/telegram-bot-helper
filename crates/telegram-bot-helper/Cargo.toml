@@ -6,6 +6,7 @@ description = "Blocking Telegram Bot API senders for debug tooling (text/photo/v
 license.workspace = true
 
 [dependencies]
+atomic-delegate-macros.workspace = true
 chrono.workspace = true
 dotenvy.workspace = true
 reqwest.workspace = true
@@ -32,3 +33,4 @@ panic_in_result_fn = "deny"
 panic = "deny"
 exit = "deny"
 as_conversions = "deny"
+missing_errors_doc = "allow"

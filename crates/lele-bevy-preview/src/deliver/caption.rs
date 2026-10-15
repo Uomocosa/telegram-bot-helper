@@ -3,12 +3,10 @@ use std::fmt::Write;
 use crate::deliver;
 use crate::deliver::basic::enums::Media;
 use crate::deliver::basic::structs::Capture;
-use crate::scene::Kind;
+use crate::scene;
 
-/// One caption for a whole album: a tagged header, then one numbered line per item
-/// in album order, because Telegram shows a single caption under the grid.
 #[must_use]
-pub fn caption(kind: Kind, scene: &str, items: &[&Capture]) -> String {
+pub fn caption(kind: scene::Kind, scene: &str, items: &[&Capture]) -> String {
     let mut out = format!("{} {scene}", kind.tag());
     for (index, capture) in items.iter().enumerate() {
         let icon = match capture.artifact.media {

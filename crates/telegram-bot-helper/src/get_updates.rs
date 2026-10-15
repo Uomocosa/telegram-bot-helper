@@ -3,12 +3,6 @@ use serde_json::Value;
 use crate::Creds;
 use crate::Error;
 
-/// # Errors
-/// Returns an error if the request fails, Telegram answers with a
-/// non-success status or `ok:false`, or the response has no `result` array.
-///
-/// Polling with `offset=None` is read-only: it leaves the update queue
-/// untouched. Pass the last seen `update_id + 1` as `offset` to consume.
 pub fn get_updates(
     creds: &Creds,
     offset: Option<i64>,

@@ -2,7 +2,7 @@ use std::sync::Mutex;
 
 use chrono::Utc;
 
-use super::test_log::TestLog;
+use crate::TestLog;
 
 #[must_use]
 pub fn open(test_name: &str) -> TestLog {

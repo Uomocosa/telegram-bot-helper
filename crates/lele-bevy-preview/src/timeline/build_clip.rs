@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use crate::Error;
 use crate::deliver;
 use crate::deliver::basic::enums::Media;
@@ -13,7 +11,12 @@ pub fn build_clip(scene: &Scene, config: &preview::Config) -> Result<Option<Capt
         return Ok(None);
     };
     let rendered = timeline::render_frames::render_frames(scene, config)?;
-    let (frames, hashes): (Vec<PathBuf>, Vec<String>) = rendered.into_iter().unzip();
+    let mut frames = Vec::with_capacity(rendered.len());
+    let mut hashes = Vec::with_capacity(rendered.len());
+    for frame in rendered {
+        frames.push(frame.path);
+        hashes.push(frame.pixel_hash);
+    }
     if hashes.windows(2).all(|pair| pair.first() == pair.get(1)) {
         return Err(Error::StaticClip {
             scene: scene.name.clone(),

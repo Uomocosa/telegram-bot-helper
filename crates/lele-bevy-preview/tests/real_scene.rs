@@ -213,7 +213,7 @@ fn a_timeline_renders_its_lead_in_then_one_frame_per_declared_frame() {
         lele_bevy_preview::timeline::render_frames(&with_timeline, &config(dir.path())).unwrap();
     assert_eq!(frames.len(), 6, "2 lead-in frames plus the 4 declared ones");
     for frame in &frames {
-        assert!(frame.0.exists(), "{} missing", frame.0.display());
+        assert!(frame.path.exists(), "{} missing", frame.path.display());
     }
 }
 
@@ -234,7 +234,10 @@ fn frames_of_a_timeline_differ_as_the_value_grows() {
     };
     let frames =
         lele_bevy_preview::timeline::render_frames(&with_timeline, &config(dir.path())).unwrap();
-    let hashes: Vec<String> = frames.iter().map(|frame| frame.1.clone()).collect();
+    let hashes: Vec<String> = frames
+        .iter()
+        .map(|frame| frame.pixel_hash.clone())
+        .collect();
     assert_ne!(
         hashes[0], hashes[1],
         "consecutive frames of a time-driven animation must differ"

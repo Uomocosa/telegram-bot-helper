@@ -1,3 +1,6 @@
+#[path = "__basic__/mod.rs"]
+pub mod basic;
+pub use basic::structs::RenderedFrame;
 pub mod build;
 pub mod build_clip;
 pub mod render_frames;

@@ -4,9 +4,6 @@ use crate::Creds;
 use crate::Error;
 use crate::send_photo;
 
-/// # Errors
-/// Returns an error if the preview cannot be read, is too small to be a real
-/// capture, has no png magic, or the Telegram upload fails.
 pub fn send_photo_file(creds: &Creds, path: &Path, caption: &str) -> Result<String, Error> {
     let display = path.display().to_string();
     let bytes = std::fs::read(path).map_err(|source| Error::Read {

@@ -12,13 +12,6 @@ const MAX_ITEMS: usize = 10;
 const MIN_BYTES: usize = 1024;
 const PNG_MAGIC: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
 
-/// Sends 2..=10 photos/videos as one album message. Only the first item carries
-/// the caption, which Telegram shows once under the whole album.
-///
-/// # Errors
-/// Returns an error if the item count is outside 2..=10, a file cannot be read,
-/// is too small, or is not a real png/mp4, the request fails, or Telegram
-/// answers with a non-success status or `ok:false`.
 pub fn send_media_group(
     creds: &Creds,
     items: &[MediaItem],
@@ -44,7 +37,7 @@ pub fn send_media_group(
             })?,
         );
     }
-    form = form.text("media", media_manifest::media_manifest(items, caption));
+    form = form.text("media", media_manifest(items, caption));
     let url = format!("https://api.telegram.org/bot{token}/sendMediaGroup");
     let response = reqwest::blocking::Client::new()
         .post(&url)

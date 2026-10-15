@@ -7,6 +7,7 @@ use bevy::prelude::App;
 use crate::Error;
 use crate::deliver;
 use crate::preview;
+use crate::scene;
 use crate::scene::Scene;
 use crate::scene::basic::structs::State;
 
@@ -19,7 +20,7 @@ fn noop_build(_app: &mut App) {}
 fn scene() -> Scene {
     Scene {
         name: String::from("sync_room_list"),
-        kind: crate::scene::Kind::System,
+        kind: scene::Kind::System,
         build: noop_build,
         states: vec![State {
             label: String::from("two rooms"),
@@ -41,7 +42,6 @@ fn config(dir: &std::path::Path) -> preview::Config {
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage() {
     let dir = tempfile::tempdir().unwrap();
     let report = run(&scene(), &config(dir.path()), "demo").unwrap();
@@ -57,7 +57,6 @@ fn test_usage() {
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage_second_identical_run_reports_same_and_sends_nothing() {
     let dir = tempfile::tempdir().unwrap();
     let report = run(&scene(), &config(dir.path()), "demo").unwrap();
@@ -74,7 +73,6 @@ fn test_usage_second_identical_run_reports_same_and_sends_nothing() {
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage_differing_pixels_report_changed() {
     let dir = tempfile::tempdir().unwrap();
     run(&scene(), &config(dir.path()), "demo").unwrap();
@@ -93,13 +91,12 @@ fn test_usage_differing_pixels_report_changed() {
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage_manifest_accumulates_across_scenes() {
     let dir = tempfile::tempdir().unwrap();
     run(&scene(), &config(dir.path()), "demo").unwrap();
     let other = Scene {
         name: String::from("spawn_root"),
-        kind: crate::scene::Kind::System,
+        kind: scene::Kind::System,
         ..scene()
     };
     run(&other, &config(dir.path()), "demo").unwrap();
@@ -110,7 +107,6 @@ fn test_usage_manifest_accumulates_across_scenes() {
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage_an_invalid_scene_is_reported_before_any_capture() {
     let dir = tempfile::tempdir().unwrap();
     let broken = Scene {
@@ -127,7 +123,6 @@ fn test_usage_an_invalid_scene_is_reported_before_any_capture() {
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage_artifacts_are_named_after_the_scene_and_state() {
     let dir = tempfile::tempdir().unwrap();
     let report = run(&scene(), &config(dir.path()), "demo").unwrap();

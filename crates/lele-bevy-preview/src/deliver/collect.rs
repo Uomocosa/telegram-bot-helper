@@ -1,30 +1,29 @@
-use std::path::PathBuf;
-
 use crate::Error;
 use crate::deliver;
 use crate::deliver::basic::enums::Media;
 use crate::deliver::basic::structs::{Artifact, Capture, Manifest};
-use crate::scene::Kind;
+use crate::preview;
+use crate::scene;
 
 pub fn collect(
     scene: &str,
-    kind: Kind,
-    rendered: &[(PathBuf, String, String)],
+    kind: scene::Kind,
+    rendered: &[preview::RenderedState],
     previous: Option<&Manifest>,
 ) -> Result<Vec<Capture>, Error> {
     let mut captures = Vec::new();
-    for (path, label, pixels) in rendered {
+    for state in rendered {
         let artifact = Artifact {
             scene: scene.to_string(),
-            label: label.clone(),
-            fingerprint: deliver::fingerprint_of::fingerprint_of(scene, label),
-            pixel_hash: pixels.clone(),
+            label: state.label.clone(),
+            fingerprint: deliver::fingerprint_of::fingerprint_of(scene, &state.label),
+            pixel_hash: state.pixel_hash.clone(),
             media: Media::Png,
             kind,
         };
         let status = deliver::state_status::state_status(previous, &artifact);
         captures.push(Capture {
-            path: path.clone(),
+            path: state.path.clone(),
             artifact,
             status,
         });

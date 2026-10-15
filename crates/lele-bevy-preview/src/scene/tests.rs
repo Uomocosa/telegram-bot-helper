@@ -15,7 +15,7 @@ fn noop_build(_app: &mut App) {}
 fn scene() -> scene::Scene {
     scene::Scene {
         name: String::from("spawn_root"),
-        kind: crate::scene::Kind::System,
+        kind: scene::Kind::System,
         build: noop_build,
         states: vec![State {
             label: String::from("empty"),
@@ -41,7 +41,6 @@ fn spec(frames: u32, fps: u32) -> Timeline {
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage() {
     assert!(scene::check::check(&scene()).is_ok());
     assert!(matches!(scene().states.first(), Some(State { .. })));
@@ -49,7 +48,6 @@ fn test_usage() {
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage_rejects_empty_states_zero_frames_and_blank_names() {
     let no_states = scene::Scene {
         states: Vec::new(),
@@ -66,14 +64,13 @@ fn test_usage_rejects_empty_states_zero_frames_and_blank_names() {
     assert!(scene::check::check(&zero_frames).is_err());
     let unnamed = scene::Scene {
         name: String::new(),
-        kind: crate::scene::Kind::System,
+        kind: scene::Kind::System,
         ..scene()
     };
     assert!(scene::check::check(&unnamed).is_err());
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage_rejects_bad_labels_caps_and_fps() {
     let blank_label = scene::Scene {
         states: vec![State {

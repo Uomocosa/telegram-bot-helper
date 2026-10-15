@@ -4,9 +4,6 @@ use crate::Creds;
 use crate::Error;
 use crate::send_video;
 
-/// # Errors
-/// Returns an error if the clip cannot be read, is too small to be a real
-/// recording, has no mp4 `ftyp` box, or the Telegram upload fails.
 pub fn send_video_file(creds: &Creds, path: &Path, caption: &str) -> Result<String, Error> {
     let display = path.display().to_string();
     let bytes = std::fs::read(path).map_err(|source| Error::Read {

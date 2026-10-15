@@ -34,6 +34,7 @@ mod tests {
     use crate::deliver::basic::enums::{Media, Status};
     use crate::deliver::basic::structs::{Artifact, Capture};
     use crate::report::Report;
+    use crate::scene;
     use std::path::PathBuf;
 
     // needed helper: fixture shared by the tests in this file
@@ -46,7 +47,7 @@ mod tests {
                 fingerprint: format!("ui|{label}"),
                 pixel_hash: String::from("h"),
                 media: Media::Png,
-                kind: crate::scene::Kind::System,
+                kind: scene::Kind::System,
             },
             status,
         }

@@ -315,6 +315,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "atomic-delegate-macros"
+version = "0.0.1"
+source = "git+https://github.com/Uomocosa/lele-rust-linter?tag=v0.0.1#c96343298c7b304d2b7ce25e919cbc7c479e9642"
+dependencies = [
+ "lele-snake-case",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+]
+
+[[package]]
 name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3298,6 +3309,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "lele-snake-case"
+version = "0.0.1"
+source = "git+https://github.com/Uomocosa/lele-rust-linter?tag=v0.0.1#c96343298c7b304d2b7ce25e919cbc7c479e9642"
+
+[[package]]
 name = "libc"
 version = "0.2.190"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4988,6 +5004,7 @@ dependencies = [
 name = "telegram-bot-helper"
 version = "0.0.1"
 dependencies = [
+ "atomic-delegate-macros",
  "chrono",
  "dotenvy",
  "reqwest",

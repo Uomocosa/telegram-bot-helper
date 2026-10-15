@@ -12,7 +12,7 @@ fn noop_build(_app: &mut App) {}
 fn scene() -> scene::Scene {
     scene::Scene {
         name: String::from("demo"),
-        kind: crate::scene::Kind::System,
+        kind: scene::Kind::System,
         build: noop_build,
         states: vec![
             crate::scene::basic::structs::State {
@@ -40,7 +40,6 @@ fn fast(dir: &std::path::Path) -> preview::Config {
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage() {
     let config = preview::Config::default();
     assert_eq!(config.width, preview::basic::constants::DEFAULT_WIDTH);
@@ -53,7 +52,6 @@ fn test_usage() {
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage_install_produces_an_offscreen_target_and_a_camera() {
     let config = preview::Config::default();
     let mut app = App::new();
@@ -65,7 +63,6 @@ fn test_usage_install_produces_an_offscreen_target_and_a_camera() {
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage_once_writes_a_non_empty_png_and_creates_parents() {
     let config = preview::Config::default();
     let mut app = App::new();
@@ -78,7 +75,6 @@ fn test_usage_once_writes_a_non_empty_png_and_creates_parents() {
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage_settled_returns_a_frame_once_two_readbacks_match() {
     let config = preview::Config::default();
     let mut app = App::new();
@@ -91,7 +87,6 @@ fn test_usage_settled_returns_a_frame_once_two_readbacks_match() {
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage_a_zero_frame_budget_reports_no_frame() {
     let config = preview::Config::default();
     let mut app = App::new();
@@ -105,21 +100,27 @@ fn test_usage_a_zero_frame_budget_reports_no_frame() {
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage_render_states_writes_one_png_per_state_named_after_the_scene() {
     let dir = tempfile::tempdir().unwrap();
     let rendered = preview::render_states(&scene(), &fast(dir.path())).unwrap();
     assert_eq!(rendered.len(), 2);
-    for (path, label, pixels) in &rendered {
-        assert!(path.exists(), "{} missing", path.display());
-        assert!(label.len() > 1);
-        assert_eq!(pixels.len(), crate::deliver::basic::constants::HASH_CHARS);
+    for state in &rendered {
+        assert!(state.path.exists(), "{} missing", state.path.display());
+        assert!(state.label.len() > 1);
+        assert_eq!(
+            state.pixel_hash.len(),
+            crate::deliver::basic::constants::HASH_CHARS
+        );
     }
-    assert!(rendered[0].0.to_string_lossy().contains("demo__one_room"));
+    assert!(
+        rendered[0]
+            .path
+            .to_string_lossy()
+            .contains("demo__one_room")
+    );
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage_render_states_rejects_an_invalid_scene_before_rendering() {
     let dir = tempfile::tempdir().unwrap();
     let broken = scene::Scene {
@@ -130,7 +131,6 @@ fn test_usage_render_states_rejects_an_invalid_scene_before_rendering() {
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage_build_warmup_and_target_of_are_usable_together() {
     let dir = tempfile::tempdir().unwrap();
     let config = fast(dir.path());

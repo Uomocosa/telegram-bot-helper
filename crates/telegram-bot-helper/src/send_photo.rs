@@ -3,9 +3,6 @@ use crate::Error;
 use crate::message_id;
 use crate::truncate_caption;
 
-/// # Errors
-/// Returns an error if the photo bytes are empty, the request fails,
-/// or Telegram answers with a non-success status or `ok:false`.
 pub fn send_photo(creds: &Creds, bytes: &[u8], caption: &str) -> Result<String, Error> {
     if bytes.is_empty() {
         return Err(Error::EmptyPayload { op: "send_photo" });

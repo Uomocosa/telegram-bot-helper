@@ -1,4 +1,6 @@
 use crate::deliver;
+use crate::preview;
+use crate::scene;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
@@ -10,7 +12,7 @@ fn artifact(scene: &str, label: &str, fingerprint: &str, pixels: &str) -> delive
         fingerprint: fingerprint.to_string(),
         pixel_hash: pixels.to_string(),
         media: deliver::Media::Png,
-        kind: crate::scene::Kind::System,
+        kind: scene::Kind::System,
     }
 }
 
@@ -35,7 +37,6 @@ fn manifest(entries: Vec<deliver::Artifact>) -> deliver::Manifest {
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage() {
     assert_eq!(deliver::slug("hover then press"), "hover_then_press");
     assert_eq!(deliver::slug("A-B.c"), "a_b_c");
@@ -53,7 +54,6 @@ fn test_usage() {
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage_status_distinguishes_first_run_new_changed_and_same() {
     let before = manifest(vec![artifact("ui", "rest", "a", "1")]);
     let same = artifact("ui", "rest", "a", "1");
@@ -78,7 +78,6 @@ fn test_usage_status_distinguishes_first_run_new_changed_and_same() {
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage_status_matches_by_scene_and_label_when_fingerprint_moved() {
     let before = manifest(vec![artifact("ui", "rest", "a", "1")]);
     let moved = artifact("ui", "rest", "a-renamed", "1");
@@ -89,25 +88,22 @@ fn test_usage_status_matches_by_scene_and_label_when_fingerprint_moved() {
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage_collect_labels_every_artifact_with_a_status() {
-    let rendered = vec![(
-        PathBuf::from("out/rest.png"),
-        String::from("rest"),
-        String::from("h1"),
-    )];
-    let captures = deliver::collect("ui", crate::scene::Kind::System, &rendered, None).unwrap();
+    let rendered = vec![preview::RenderedState {
+        path: PathBuf::from("out/rest.png"),
+        label: String::from("rest"),
+        pixel_hash: String::from("h1"),
+    }];
+    let captures = deliver::collect("ui", scene::Kind::System, &rendered, None).unwrap();
     assert_eq!(captures.len(), 1);
     assert_eq!(captures[0].status, deliver::Status::FirstRun);
     assert_eq!(captures[0].artifact.fingerprint, "ui|rest");
     let previous = manifest(vec![captures[0].artifact.clone()]);
-    let again =
-        deliver::collect("ui", crate::scene::Kind::System, &rendered, Some(&previous)).unwrap();
+    let again = deliver::collect("ui", scene::Kind::System, &rendered, Some(&previous)).unwrap();
     assert_eq!(again[0].status, deliver::Status::Same);
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage_hash_file_reads_bytes_and_reports_missing_files() {
     let dir = tempfile::tempdir().unwrap();
     let png = dir.path().join("bytes.png");
@@ -120,7 +116,6 @@ fn test_usage_hash_file_reads_bytes_and_reports_missing_files() {
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage_manifest_round_trips_through_disk() {
     let dir = tempfile::tempdir().unwrap();
     assert!(deliver::load_previous(dir.path()).is_none());
@@ -146,7 +141,6 @@ fn test_usage_manifest_round_trips_through_disk() {
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage_update_manifest_merges_rather_than_replaces() {
     let dir = tempfile::tempdir().unwrap();
     deliver::write_all(
@@ -169,7 +163,6 @@ fn test_usage_update_manifest_merges_rather_than_replaces() {
 }
 
 #[test]
-// needed helper: fixture shared by the tests in this file
 fn test_usage_changes_markdown_lists_only_what_moved() {
     let all = vec![
         capture("rest", deliver::Status::Same),

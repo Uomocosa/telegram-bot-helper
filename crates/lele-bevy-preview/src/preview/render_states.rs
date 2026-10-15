@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use crate::Error;
 use crate::deliver;
 use crate::preview;
@@ -9,7 +7,7 @@ use crate::scene::Scene;
 pub fn render_states(
     scene: &Scene,
     config: &preview::Config,
-) -> Result<Vec<(PathBuf, String, String)>, Error> {
+) -> Result<Vec<preview::RenderedState>, Error> {
     scene::check::check(scene)?;
     let mut rendered = Vec::new();
     for state in &scene.states {
@@ -18,8 +16,12 @@ pub fn render_states(
             scene.name,
             deliver::slug::slug(&state.label)
         ));
-        let pixels = render_one(scene, config, state, &out)?;
-        rendered.push((out, state.label.clone(), pixels));
+        let pixel_hash = render_one(scene, config, state, &out)?;
+        rendered.push(preview::RenderedState {
+            path: out,
+            label: state.label.clone(),
+            pixel_hash,
+        });
     }
     Ok(rendered)
 }

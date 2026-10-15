@@ -9,6 +9,7 @@ pub enum Kind {
     App,
 }
 
+#[rustfmt::skip]
 impl Kind {
     #[must_use]
     pub const fn tag(self) -> &'static str {
@@ -18,5 +19,16 @@ impl Kind {
             Self::Plugin => "[plugin]",
             Self::App => "[app]",
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Kind;
+
+    #[test]
+    fn test_usage() {
+        assert_eq!(Kind::System.tag(), "[system]");
+        assert_eq!(Kind::App.tag(), "[app]");
     }
 }

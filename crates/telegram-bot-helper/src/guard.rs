@@ -1,17 +1,20 @@
-use super::guard_start;
-use super::load_creds;
-use super::send_text;
-use super::status_enabled;
+use crate::load_creds;
+use crate::send_text;
+use crate::status_enabled;
 
 pub struct Guard {
     pub name: String,
     pub start: std::time::Instant,
 }
 
-#[rustfmt::skip]
 impl Guard {
     #[must_use]
-    pub fn start(name: &str) -> Self { guard_start::start(name) }
+    pub fn start(name: &str) -> Self {
+        Self {
+            name: name.to_string(),
+            start: std::time::Instant::now(),
+        }
+    }
 }
 
 impl Drop for Guard {
@@ -22,17 +25,26 @@ impl Drop for Guard {
             "PASSED"
         };
         let text = format!("{} {} in {:?}", status, self.name, self.start.elapsed());
-        if !status_enabled::status_enabled() {
+        if !status_enabled() {
             return;
         }
-        let Some(creds) = load_creds::load_creds() else {
+        let Some(creds) = load_creds() else {
             eprintln!("telegram skipped (no creds): {text}");
             return;
         };
-        if let Err(err) = send_text::send_text(&creds, &text) {
+        if let Err(err) = send_text(&creds, &text) {
             eprintln!("telegram send failed: {err}");
         }
     }
 }
 
-// no test_usage necessary
+#[cfg(test)]
+mod tests {
+    use super::Guard;
+
+    #[test]
+    fn test_usage() {
+        let guard = Guard::start("guard_start_smoke");
+        assert_eq!(guard.name, "guard_start_smoke");
+    }
+}

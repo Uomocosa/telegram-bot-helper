@@ -2,9 +2,6 @@ use crate::Creds;
 use crate::Error;
 use crate::message_id;
 
-/// # Errors
-/// Returns an error if the text is empty, the request fails,
-/// or Telegram answers with a non-success status or `ok:false`.
 pub fn send_text(creds: &Creds, text: &str) -> Result<String, Error> {
     if text.is_empty() {
         return Err(Error::EmptyPayload { op: "send_text" });

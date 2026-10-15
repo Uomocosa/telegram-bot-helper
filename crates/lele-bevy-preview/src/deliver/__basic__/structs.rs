@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use crate::deliver;
 use crate::deliver::basic::enums::Media;
-use crate::scene::Kind;
+use crate::scene;
 
 use serde::{Deserialize, Serialize};
 
@@ -16,7 +16,7 @@ pub struct Artifact {
     #[serde(default)]
     pub media: Media,
     #[serde(default)]
-    pub kind: Kind,
+    pub kind: scene::Kind,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
