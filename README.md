@@ -18,6 +18,7 @@ rustup toolchain install nightly    # rust-toolchain.toml pins channel + compone
 cargo install cargo-nextest
 cargo install just
 cargo install --git https://github.com/Uomocosa/lele-rust-linter lele-lint
+cargo binstall prek                 # hook runner (`prek install` via `just setup`)
 ```
 
 System libraries — needed only to build/run `lele-bevy-preview` (Bevy) and record
@@ -35,6 +36,7 @@ Telegram delivery reads credentials from `.env` (`TELEGRAM_*`) — never commit 
 
 ```sh
 just build | just clippy | just fmt | just test | just lint
-just hooks      # point git at .githooks/
+just setup    # one-time per clone: install the prek git hooks
+just check    # run the full gate (same as CI)
 just ci
 ```

@@ -24,8 +24,10 @@ lint:
     lele-lint crates/telegram-bot-helper-macros
     lele-lint crates/lele-bevy-preview
 
-hooks:
-    git config core.hooksPath .githooks
-    chmod +x .githooks/*
+setup:
+    prek install -t pre-commit -t pre-push
 
-ci: build fmt clippy lint test
+check:
+    prek run --all-files
+
+ci: build check
