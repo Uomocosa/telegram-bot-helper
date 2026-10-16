@@ -36,15 +36,16 @@ fn build(app: &mut App) {
             }
         },
     );
+    app.add_systems(
+        PostStartup,
+        lele_bevy_preview::scene::bevy_systems::center_roots,
+    );
 }
 
 const fn noop(_world: &mut World) {}
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let out = std::env::args()
-        .nth(1)
-        .map_or_else(|| PathBuf::from("/tmp/opencode/scene-out"), PathBuf::from);
-    let scene = Scene {
+fn scene() -> Scene {
+    Scene {
         name: String::from("panel"),
         kind: lele_bevy_preview::scene::Kind::System,
         build,
@@ -64,17 +65,60 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             fps: 24,
             apply: noop,
         }),
-    };
-    let config = Config {
+    }
+}
+
+fn config(out: PathBuf) -> Config {
+    Config {
         out_dir: out,
         warmup_frames: 60,
         max_capture_frames: 300,
         ..Config::default()
-    };
-    let report = lele_bevy_preview::run(&scene, &config, "render_scene")?;
+    }
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let out = std::env::args()
+        .nth(1)
+        .map_or_else(|| PathBuf::from("/tmp/opencode/scene-out"), PathBuf::from);
+    let report = lele_bevy_preview::run(&scene(), &config(out), "render_scene")?;
     println!("{report}");
     for capture in &report.captures {
         println!("{} {}", capture.artifact.label, capture.path.display());
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    fn preview_build(app: &mut bevy::prelude::App) {
+        super::build(app);
+    }
+
+    fn out() -> std::path::PathBuf {
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("ui_preview")
+    }
+
+    #[test]
+    fn render_scene_ui_png_preview() {
+        let still = lele_bevy_preview::scene::Scene {
+            build: preview_build,
+            timeline: None,
+            ..super::scene()
+        };
+        let report =
+            lele_bevy_preview::run(&still, &super::config(out()), "render_scene").expect("preview");
+        lele_bevy_preview::layout::assert_centered(&report, 2).expect("centred");
+    }
+
+    #[test]
+    fn render_scene_ui_mp4_preview() {
+        let pulsing = lele_bevy_preview::scene::Scene {
+            build: preview_build,
+            ..super::scene()
+        };
+        let report = lele_bevy_preview::run(&pulsing, &super::config(out()), "render_scene")
+            .expect("preview");
+        assert!(report.clip.is_some());
+    }
 }

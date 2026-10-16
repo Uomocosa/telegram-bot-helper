@@ -24,6 +24,9 @@ lint:
     lele-lint crates/telegram-bot-helper-macros
     lele-lint crates/lele-bevy-preview
 
+bevy-lint:
+    lele-bevy-lint crates/lele-bevy-preview
+
 setup:
     prek install -t pre-commit -t pre-push
 

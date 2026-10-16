@@ -9,3 +9,4 @@
 .env.*
 *.env
 *.sync-conflict-*
+ui_preview/

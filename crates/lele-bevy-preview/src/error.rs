@@ -34,6 +34,21 @@ pub enum Error {
     #[error("ffmpeg failed for {path}: {message}")]
     Ffmpeg { path: String, message: String },
 
+    #[error(
+        "capture {path} is not centred: content centre is ({x}, {y}), the frame centre is ({expected_x}, {expected_y}), tolerance {tolerance}px"
+    )]
+    NotCentered {
+        path: String,
+        x: u32,
+        y: u32,
+        expected_x: u32,
+        expected_y: u32,
+        tolerance: u32,
+    },
+
+    #[error("capture {0} shows only background, so there is nothing to centre")]
+    NoContent(String),
+
     #[error("telegram delivery failed: {0}")]
     Telegram(String),
 }

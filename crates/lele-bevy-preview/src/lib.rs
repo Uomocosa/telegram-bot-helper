@@ -1,3 +1,5 @@
+extern crate self as lele_bevy_preview;
+
 #[path = "__basic__/mod.rs"]
 pub mod __basic__;
 
@@ -5,6 +7,7 @@ pub mod error;
 pub use error::Error;
 
 pub mod deliver;
+pub mod layout;
 pub mod preview;
 pub mod report;
 mod run;
@@ -29,3 +32,4 @@ mod scene_tests;
 #[cfg(test)]
 #[path = "timeline/tests.rs"]
 mod timeline_tests;
+// no test_usage necessary

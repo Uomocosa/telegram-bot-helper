@@ -7,7 +7,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.0.4"
+version = "0.0.5"
 license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
@@ -26,6 +26,7 @@ reqwest = { version = "=0.12.28", default-features = false, features = ["blockin
 serde = { version = "1", features = ["derive"] }
 serde_json = "=1.0.151"
 syn = { version = "=2.0.119", features = ["full"] }
+image = { version = "=0.25.10", default-features = false, features = ["png"] }
 tempfile = "=3.27.0"
 thiserror = "2"
 tracing = "0.1"
