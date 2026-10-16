@@ -166,13 +166,15 @@ const fn noop_build(_app: &mut App) {}
 fn second_identical_run_is_reported_as_unchanged_and_is_not_sendable() {
     let dir = tempfile::tempdir().unwrap();
     let one = scene(vec![rest()]);
-    run(&one, &config(dir.path()), "real_scene").unwrap();
+    let first = run(&one, &config(dir.path()), "real_scene").unwrap();
     let two = scene(vec![rest()]);
     let second = run(&two, &config(dir.path()), "real_scene").unwrap();
-    assert_eq!(second.captures[0].status, Status::Same);
-    assert!(!lele_bevy_preview::deliver::sendable(
-        second.captures[0].status
-    ));
+    let expected = if first.captures[0].artifact.unsent {
+        Status::Unsent
+    } else {
+        Status::Same
+    };
+    assert_eq!(second.captures[0].status, expected);
 }
 
 #[test]

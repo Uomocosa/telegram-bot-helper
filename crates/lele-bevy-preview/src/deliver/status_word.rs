@@ -7,6 +7,7 @@ pub const fn status_word(status: Status) -> &'static str {
         Status::New => "new",
         Status::Changed => "changed",
         Status::Same => "same",
+        Status::Unsent => "unsent",
     }
 }
 // no test_usage necessary

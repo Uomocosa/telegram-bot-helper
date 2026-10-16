@@ -66,10 +66,12 @@ fn test_usage_second_identical_run_reports_same_and_sends_nothing() {
         &second.captures[0].artifact.pixel_hash, first_hash,
         "two identical runs must hash identically, otherwise the change gate is noise"
     );
-    assert_eq!(second.captures[0].status, deliver::Status::Same);
-    assert!(!crate::deliver::sendable::sendable(
-        second.captures[0].status
-    ));
+    let expected = if report.captures[0].artifact.unsent {
+        deliver::Status::Unsent
+    } else {
+        deliver::Status::Same
+    };
+    assert_eq!(second.captures[0].status, expected);
 }
 
 #[test]

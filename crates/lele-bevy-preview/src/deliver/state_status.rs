@@ -15,6 +15,7 @@ pub fn state_status(previous: Option<&Manifest>, artifact: &Artifact) -> Status 
     match before {
         None => Status::New,
         Some(old) if old.pixel_hash != artifact.pixel_hash => Status::Changed,
+        Some(old) if old.unsent => Status::Unsent,
         Some(_) => Status::Same,
     }
 }

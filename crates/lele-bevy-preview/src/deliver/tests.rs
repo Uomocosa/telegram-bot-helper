@@ -13,6 +13,7 @@ fn artifact(scene: &str, label: &str, fingerprint: &str, pixels: &str) -> delive
         pixel_hash: pixels.to_string(),
         media: deliver::Media::Png,
         kind: scene::Kind::System,
+        unsent: false,
     }
 }
 
@@ -75,6 +76,17 @@ fn test_usage_status_distinguishes_first_run_new_changed_and_same() {
         deliver::state_status(Some(&before), &fresh),
         deliver::Status::New
     );
+}
+
+#[test]
+fn test_usage_status_reports_an_unchanged_but_unsent_artifact_as_unsent() {
+    let mut pending = artifact("ui", "rest", "a", "1");
+    pending.unsent = true;
+    let before = manifest(vec![pending]);
+    let same = artifact("ui", "rest", "a", "1");
+    let status = deliver::state_status(Some(&before), &same);
+    assert_eq!(status, deliver::Status::Unsent);
+    assert!(deliver::sendable(status));
 }
 
 #[test]

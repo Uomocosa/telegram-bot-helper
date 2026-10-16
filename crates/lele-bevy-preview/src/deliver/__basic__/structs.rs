@@ -17,6 +17,8 @@ pub struct Artifact {
     pub media: Media,
     #[serde(default)]
     pub kind: scene::Kind,
+    #[serde(default)]
+    pub unsent: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

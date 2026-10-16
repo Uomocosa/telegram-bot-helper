@@ -44,6 +44,7 @@ pub fn build_clip(scene: &Scene, config: &preview::Config) -> Result<Option<Capt
         pixel_hash: clip_hash(spec.fps, &hashes),
         media: Media::Mp4,
         kind: scene.kind,
+        unsent: false,
     };
     let previous = deliver::load_previous::load_previous(&config.out_dir);
     let status = deliver::state_status::state_status(previous.as_ref(), &artifact);

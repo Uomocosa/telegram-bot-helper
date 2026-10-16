@@ -43,6 +43,7 @@ mod tests {
                 pixel_hash: String::from("h"),
                 media,
                 kind: Kind::System,
+                unsent: false,
             },
             status,
         }

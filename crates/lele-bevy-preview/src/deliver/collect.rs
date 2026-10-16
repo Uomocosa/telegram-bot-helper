@@ -20,6 +20,7 @@ pub fn collect(
             pixel_hash: state.pixel_hash.clone(),
             media: Media::Png,
             kind,
+            unsent: false,
         };
         let status = deliver::state_status::state_status(previous, &artifact);
         captures.push(Capture {

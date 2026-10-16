@@ -6,6 +6,7 @@ pub enum Status {
     New,
     Changed,
     Same,
+    Unsent,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
