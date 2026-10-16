@@ -15,6 +15,7 @@ pub mod scene;
 pub mod timeline;
 
 pub use report::Report;
+pub use run::build_report::build_report;
 pub use run::run;
 
 #[cfg(test)]

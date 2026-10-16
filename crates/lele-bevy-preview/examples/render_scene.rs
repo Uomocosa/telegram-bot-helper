@@ -78,9 +78,16 @@ fn config(out: PathBuf) -> Config {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::args().any(|arg| arg == "--resend-all-previews") {
+        unsafe { std::env::set_var("LELE_PREVIEW_RESEND_ALL", "1") };
+    }
     let out = std::env::args()
-        .nth(1)
-        .map_or_else(|| PathBuf::from("/tmp/opencode/scene-out"), PathBuf::from);
+        .skip(1)
+        .find(|arg| !arg.starts_with("--"))
+        .map_or_else(
+            || PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("ui_preview"),
+            PathBuf::from,
+        );
     let report = lele_bevy_preview::run(&scene(), &config(out), "render_scene")?;
     println!("{report}");
     for capture in &report.captures {

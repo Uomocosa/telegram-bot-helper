@@ -1,12 +1,16 @@
 use crate::Error;
 use crate::deliver;
 use crate::deliver::basic::enums::Media;
-use crate::deliver::basic::structs::{Artifact, Capture};
+use crate::deliver::basic::structs::{Artifact, Capture, Manifest};
 use crate::preview;
 use crate::scene::Scene;
 use crate::timeline;
 
-pub fn build_clip(scene: &Scene, config: &preview::Config) -> Result<Option<Capture>, Error> {
+pub fn build_clip(
+    scene: &Scene,
+    config: &preview::Config,
+    previous: Option<&Manifest>,
+) -> Result<Option<Capture>, Error> {
     let Some(spec) = scene.timeline.as_ref() else {
         return Ok(None);
     };
@@ -44,10 +48,8 @@ pub fn build_clip(scene: &Scene, config: &preview::Config) -> Result<Option<Capt
         pixel_hash: clip_hash(spec.fps, &hashes),
         media: Media::Mp4,
         kind: scene.kind,
-        unsent: false,
     };
-    let previous = deliver::load_previous::load_previous(&config.out_dir);
-    let status = deliver::state_status::state_status(previous.as_ref(), &artifact);
+    let status = deliver::state_status::state_status(previous, &artifact);
     Ok(Some(Capture {
         path: out,
         artifact,

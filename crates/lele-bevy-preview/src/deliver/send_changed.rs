@@ -10,9 +10,10 @@ pub fn send_changed(
     clip: Option<&deliver::Capture>,
 ) -> Result<usize, Error> {
     let all: Vec<&deliver::Capture> = captures.iter().chain(clip).collect();
-    if !all
-        .iter()
-        .any(|capture| deliver::sendable::sendable(capture.status))
+    if !deliver::resend_all::resend_all()
+        && !all
+            .iter()
+            .any(|capture| deliver::sendable::sendable(capture.status))
     {
         return Ok(0);
     }

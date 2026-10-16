@@ -48,7 +48,7 @@ fn test_usage() {
         config.warmup_frames,
         preview::basic::constants::DEFAULT_WARMUP_FRAMES
     );
-    assert!(config.out_dir.ends_with("lele-bevy-preview"));
+    assert!(config.out_dir.ends_with("ui_preview"));
 }
 
 #[test]

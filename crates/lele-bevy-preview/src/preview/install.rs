@@ -14,7 +14,9 @@ use crate::preview::basic::constants::{
 
 pub fn install(app: &mut App, config: &preview::Config) -> Handle<Image> {
     add_plugins(app);
-    app.insert_resource(TimeUpdateStrategy::FixedTimesteps(1));
+    app.insert_resource(TimeUpdateStrategy::ManualDuration(
+        std::time::Duration::ZERO,
+    ));
     app.insert_resource(ClearColor(Color::srgb(CLEAR_R, CLEAR_G, CLEAR_B)));
     app.init_resource::<bevy::input_focus::InputFocus>();
     app.init_resource::<bevy::input_focus::InputFocusVisible>();

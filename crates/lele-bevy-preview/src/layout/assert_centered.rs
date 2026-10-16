@@ -27,9 +27,8 @@ mod tests {
                     pixel_hash: String::new(),
                     media: deliver::Media::Png,
                     kind: crate::scene::Kind::System,
-                    unsent: false,
                 },
-                status: deliver::Status::FirstRun,
+                status: deliver::Status::New,
             }],
             clip: None,
         }

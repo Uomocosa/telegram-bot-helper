@@ -62,7 +62,7 @@ fn fast(dir: &std::path::Path) -> preview::Config {
 #[test]
 fn test_usage() {
     let dir = tempfile::tempdir().unwrap();
-    let clip = timeline::build_clip::build_clip(&scene(Some(spec(3))), &fast(dir.path()))
+    let clip = timeline::build_clip::build_clip(&scene(Some(spec(3))), &fast(dir.path()), None)
         .unwrap()
         .expect("a declared timeline must produce a clip");
     assert!(clip.path.exists(), "{} missing", clip.path.display());
@@ -91,7 +91,7 @@ fn test_usage_a_scene_without_a_timeline_produces_no_frames() {
         0
     );
     assert!(
-        timeline::build_clip::build_clip(&scene(None), &config)
+        timeline::build_clip::build_clip(&scene(None), &config, None)
             .unwrap()
             .is_none()
     );
@@ -144,7 +144,7 @@ fn test_usage_a_clip_whose_frames_never_differ_is_rejected() {
         apply: noop,
         ..spec(3)
     };
-    let result = timeline::build_clip::build_clip(&scene(Some(flat)), &fast(dir.path()));
+    let result = timeline::build_clip::build_clip(&scene(Some(flat)), &fast(dir.path()), None);
     assert!(matches!(result, Err(crate::Error::StaticClip { .. })));
 }
 

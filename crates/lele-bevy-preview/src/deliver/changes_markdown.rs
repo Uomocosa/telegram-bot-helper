@@ -12,7 +12,7 @@ pub fn changes_markdown(captures: &[Capture]) -> String {
         .collect();
     let added: Vec<&Capture> = captures
         .iter()
-        .filter(|capture| capture.status == Status::New || capture.status == Status::FirstRun)
+        .filter(|capture| capture.status == Status::New)
         .collect();
     let unchanged = captures
         .len()

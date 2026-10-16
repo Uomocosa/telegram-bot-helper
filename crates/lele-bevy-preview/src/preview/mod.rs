@@ -4,6 +4,7 @@ pub use basic::structs::RenderedState;
 pub mod config;
 pub use config::Config;
 
+pub mod advance;
 pub mod build;
 pub mod distinct_colors;
 pub mod ensure_visual;
@@ -14,6 +15,7 @@ pub mod settled;
 pub mod target_of;
 pub mod warmup;
 
+pub use advance::advance;
 pub use build::build;
 pub use ensure_visual::ensure_visual;
 pub use install::install;

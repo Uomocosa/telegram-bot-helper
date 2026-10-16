@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use bevy::prelude::*;
 use lele_bevy_preview::Report;
+use lele_bevy_preview::build_report;
 use lele_bevy_preview::deliver::basic::enums::Status;
 use lele_bevy_preview::preview::Config;
 use lele_bevy_preview::run;
@@ -93,7 +94,7 @@ const fn noop(_world: &mut World) {}
 #[test]
 fn captures_a_png_per_declared_state() {
     let dir = tempfile::tempdir().unwrap();
-    let report: Report = run(
+    let report: Report = build_report(
         &scene(vec![
             rest(),
             State {
@@ -102,7 +103,6 @@ fn captures_a_png_per_declared_state() {
             },
         ]),
         &config(dir.path()),
-        "real_scene",
     )
     .unwrap();
     assert_eq!(report.captures.len(), 2);
@@ -119,7 +119,7 @@ fn captures_a_png_per_declared_state() {
 #[test]
 fn different_states_render_different_pixels() {
     let dir = tempfile::tempdir().unwrap();
-    let report = run(
+    let report = build_report(
         &scene(vec![
             rest(),
             State {
@@ -128,7 +128,6 @@ fn different_states_render_different_pixels() {
             },
         ]),
         &config(dir.path()),
-        "real_scene",
     )
     .unwrap();
     let first = &report.captures[0].artifact.pixel_hash;
@@ -163,31 +162,33 @@ fn a_blank_scene_is_rejected_rather_than_writing_an_empty_png() {
 const fn noop_build(_app: &mut App) {}
 
 #[test]
-fn second_identical_run_is_reported_as_unchanged_and_is_not_sendable() {
+fn second_identical_run_hashes_the_same() {
     let dir = tempfile::tempdir().unwrap();
-    let one = scene(vec![rest()]);
-    let first = run(&one, &config(dir.path()), "real_scene").unwrap();
-    let two = scene(vec![rest()]);
-    let second = run(&two, &config(dir.path()), "real_scene").unwrap();
-    let expected = if first.captures[0].artifact.unsent {
-        Status::Unsent
-    } else {
-        Status::Same
-    };
-    assert_eq!(second.captures[0].status, expected);
+    let first = build_report(&scene(vec![rest()]), &config(dir.path())).unwrap();
+    let second = build_report(&scene(vec![rest()]), &config(dir.path())).unwrap();
+    assert_eq!(
+        second.captures[0].artifact.pixel_hash, first.captures[0].artifact.pixel_hash,
+        "two identical runs must hash identically, otherwise the change gate is noise"
+    );
 }
 
 #[test]
 fn a_changed_visual_is_reported_as_changed() {
     let dir = tempfile::tempdir().unwrap();
-    run(&scene(vec![rest()]), &config(dir.path()), "real_scene").unwrap();
-    let tinted = run(
+    let first = build_report(&scene(vec![rest()]), &config(dir.path())).unwrap();
+    lele_bevy_preview::deliver::update_manifest(
+        dir.path(),
+        "real_scene",
+        &[&first.captures[0]],
+        &[],
+    )
+    .unwrap();
+    let tinted = build_report(
         &scene(vec![State {
             label: String::from("rest"),
             apply: tint,
         }]),
         &config(dir.path()),
-        "real_scene",
     )
     .unwrap();
     assert_eq!(tinted.captures[0].status, Status::Changed);
@@ -243,5 +244,51 @@ fn frames_of_a_timeline_differ_as_the_value_grows() {
     assert_ne!(
         hashes[0], hashes[1],
         "consecutive frames of a time-driven animation must differ"
+    );
+}
+
+#[test]
+fn a_time_driven_scene_renders_identically_across_runs() {
+    let dir = tempfile::tempdir().unwrap();
+    let still = || Scene {
+        name: String::from("card"),
+        kind: lele_bevy_preview::scene::Kind::System,
+        build: with_count_and_camera,
+        states: vec![rest()],
+        timeline: None,
+    };
+    let first = lele_bevy_preview::preview::render_states(&still(), &config(dir.path())).unwrap();
+    let second = lele_bevy_preview::preview::render_states(&still(), &config(dir.path())).unwrap();
+    assert_eq!(
+        second[0].pixel_hash, first[0].pixel_hash,
+        "a clock-driven state must render the same every run"
+    );
+
+    let pulsing = || Scene {
+        name: String::from("pulse"),
+        kind: lele_bevy_preview::scene::Kind::System,
+        build: with_count_and_camera,
+        states: vec![rest()],
+        timeline: Some(Timeline {
+            label: String::from("count_up"),
+            frames: 4,
+            fps: 30,
+            apply: grow,
+        }),
+    };
+    let first =
+        lele_bevy_preview::timeline::render_frames(&pulsing(), &config(dir.path())).unwrap();
+    let second =
+        lele_bevy_preview::timeline::render_frames(&pulsing(), &config(dir.path())).unwrap();
+    let hashes = |frames: &[lele_bevy_preview::timeline::RenderedFrame]| -> Vec<String> {
+        frames
+            .iter()
+            .map(|frame| frame.pixel_hash.clone())
+            .collect()
+    };
+    assert_eq!(
+        hashes(&second),
+        hashes(&first),
+        "a clock-driven clip must render the same frames every run"
     );
 }

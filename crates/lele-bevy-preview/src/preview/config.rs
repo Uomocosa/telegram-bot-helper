@@ -24,7 +24,7 @@ impl Default for Config {
             lead_in_frames: DEFAULT_LEAD_IN_FRAMES,
             max_capture_frames: DEFAULT_MAX_CAPTURE_FRAMES,
             min_distinct_colors: DEFAULT_MIN_DISTINCT_COLORS,
-            out_dir: std::env::temp_dir().join("lele-bevy-preview"),
+            out_dir: PathBuf::from("ui_preview"),
         }
     }
 }

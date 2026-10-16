@@ -44,64 +44,54 @@ fn config(dir: &std::path::Path) -> preview::Config {
 #[test]
 fn test_usage() {
     let dir = tempfile::tempdir().unwrap();
-    let report = run(&scene(), &config(dir.path()), "demo").unwrap();
+    let report = run::build_report::build_report(&scene(), &config(dir.path())).unwrap();
     assert_eq!(report.captures.len(), 1);
-    assert_eq!(report.captures[0].status, deliver::Status::FirstRun);
+    assert_eq!(report.captures[0].status, deliver::Status::New);
     assert!(report.clip.is_none());
-    assert!(
-        dir.path()
-            .join(deliver::basic::constants::MANIFEST_FILE)
-            .exists()
-    );
+    assert!(report.captures[0].path.exists());
     assert!(report.to_string().contains("two rooms"));
 }
 
 #[test]
-fn test_usage_second_identical_run_reports_same_and_sends_nothing() {
+fn test_usage_second_identical_run_hashes_identically() {
     let dir = tempfile::tempdir().unwrap();
-    let report = run(&scene(), &config(dir.path()), "demo").unwrap();
-    let second = run(&scene(), &config(dir.path()), "demo").unwrap();
+    let report = run::build_report::build_report(&scene(), &config(dir.path())).unwrap();
+    let second = run::build_report::build_report(&scene(), &config(dir.path())).unwrap();
     let first_hash = &report.captures[0].artifact.pixel_hash;
     assert_eq!(
         &second.captures[0].artifact.pixel_hash, first_hash,
         "two identical runs must hash identically, otherwise the change gate is noise"
     );
-    let expected = if report.captures[0].artifact.unsent {
-        deliver::Status::Unsent
-    } else {
-        deliver::Status::Same
-    };
-    assert_eq!(second.captures[0].status, expected);
 }
 
 #[test]
 fn test_usage_differing_pixels_report_changed() {
     let dir = tempfile::tempdir().unwrap();
-    run(&scene(), &config(dir.path()), "demo").unwrap();
-    let mut manifest = deliver::load_previous::load_previous(dir.path()).unwrap();
-    for entry in manifest.artifacts.values_mut() {
-        entry.pixel_hash = String::from("stale");
-    }
-    std::fs::write(
-        dir.path().join("preview-manifest.json"),
-        serde_json::to_string_pretty(&manifest).unwrap(),
-    )
-    .unwrap();
-    let third = run(&scene(), &config(dir.path()), "demo").unwrap();
+    let stale = vec![preview::RenderedState {
+        path: PathBuf::from("sync_room_list__two_rooms.png"),
+        label: String::from("two rooms"),
+        pixel_hash: String::from("stale"),
+    }];
+    let previous = deliver::collect("sync_room_list", scene::Kind::System, &stale, None).unwrap();
+    deliver::update_manifest(dir.path(), "demo", &[&previous[0]], &[]).unwrap();
+    std::fs::write(dir.path().join("sync_room_list__two_rooms.png"), b"stale").unwrap();
+    let third = run::build_report::build_report(&scene(), &config(dir.path())).unwrap();
     assert_eq!(third.captures[0].status, deliver::Status::Changed);
-    assert!(crate::deliver::sendable::sendable(third.captures[0].status));
+    assert!(deliver::sendable::sendable(third.captures[0].status));
 }
 
 #[test]
 fn test_usage_manifest_accumulates_across_scenes() {
     let dir = tempfile::tempdir().unwrap();
-    run(&scene(), &config(dir.path()), "demo").unwrap();
-    let other = Scene {
-        name: String::from("spawn_root"),
-        kind: scene::Kind::System,
-        ..scene()
-    };
-    run(&other, &config(dir.path()), "demo").unwrap();
+    let two_rooms = vec![preview::RenderedState {
+        path: PathBuf::from("sync_room_list__two_rooms.png"),
+        label: String::from("two rooms"),
+        pixel_hash: String::from("hash"),
+    }];
+    let first = deliver::collect("sync_room_list", scene::Kind::System, &two_rooms, None).unwrap();
+    deliver::update_manifest(dir.path(), "demo", &[&first[0]], &[]).unwrap();
+    let other = deliver::collect("spawn_root", scene::Kind::System, &two_rooms, None).unwrap();
+    deliver::update_manifest(dir.path(), "demo", &[&other[0]], &[]).unwrap();
     let merged = deliver::load_previous::load_previous(dir.path()).unwrap();
     assert_eq!(merged.artifacts.len(), 2);
     assert!(merged.artifacts.contains_key("sync_room_list|two rooms"));
@@ -127,7 +117,7 @@ fn test_usage_an_invalid_scene_is_reported_before_any_capture() {
 #[test]
 fn test_usage_artifacts_are_named_after_the_scene_and_state() {
     let dir = tempfile::tempdir().unwrap();
-    let report = run(&scene(), &config(dir.path()), "demo").unwrap();
+    let report = run::build_report::build_report(&scene(), &config(dir.path())).unwrap();
     let path: PathBuf = report.captures[0].path.clone();
     let name = path
         .file_name()
@@ -135,5 +125,54 @@ fn test_usage_artifacts_are_named_after_the_scene_and_state() {
         .to_string_lossy()
         .to_string();
     assert_eq!(name, "sync_room_list__two_rooms.png");
+}
+
+#[test]
+fn test_usage_a_recorded_preview_stays_same() {
+    let dir = tempfile::tempdir().unwrap();
+    let first = run::build_report::build_report(&scene(), &config(dir.path())).unwrap();
+    deliver::update_manifest(dir.path(), "demo", &[&first.captures[0]], &[]).unwrap();
+    let second = run::build_report::build_report(&scene(), &config(dir.path())).unwrap();
+    assert_eq!(second.captures[0].status, deliver::Status::Same);
+    assert!(!deliver::sendable::sendable(second.captures[0].status));
+}
+
+#[test]
+fn test_usage_a_deleted_preview_is_pending_again() {
+    let dir = tempfile::tempdir().unwrap();
+    let first = run::build_report::build_report(&scene(), &config(dir.path())).unwrap();
+    deliver::update_manifest(dir.path(), "demo", &[&first.captures[0]], &[]).unwrap();
+    std::fs::remove_file(&first.captures[0].path).unwrap();
+    let second = run::build_report::build_report(&scene(), &config(dir.path())).unwrap();
+    assert_eq!(second.captures[0].status, deliver::Status::New);
+    assert!(deliver::sendable::sendable(second.captures[0].status));
+}
+
+#[test]
+fn test_usage_an_unrecorded_preview_stays_pending() {
+    let dir = tempfile::tempdir().unwrap();
+    run::build_report::build_report(&scene(), &config(dir.path())).unwrap();
+    let second = run::build_report::build_report(&scene(), &config(dir.path())).unwrap();
+    assert_eq!(
+        second.captures[0].status,
+        deliver::Status::New,
+        "a preview never confirmed as sent must keep being offered"
+    );
+}
+
+#[test]
+fn test_usage_an_unsent_preview_is_dropped_from_the_manifest() {
+    let dir = tempfile::tempdir().unwrap();
+    let first = run::build_report::build_report(&scene(), &config(dir.path())).unwrap();
+    deliver::update_manifest(dir.path(), "demo", &[&first.captures[0]], &[]).unwrap();
+    std::fs::remove_file(&first.captures[0].path).unwrap();
+    let second = run::build_report::build_report(&scene(), &config(dir.path())).unwrap();
+    deliver::update_manifest(dir.path(), "demo", &[], &[&second.captures[0]]).unwrap();
+    let third = run::build_report::build_report(&scene(), &config(dir.path())).unwrap();
+    assert_eq!(
+        third.captures[0].status,
+        deliver::Status::New,
+        "a re-rendered but unsent preview must stay pending on the next run"
+    );
 }
 // no test_usage necessary

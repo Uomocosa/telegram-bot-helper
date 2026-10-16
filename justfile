@@ -19,6 +19,10 @@ fmt:
 test:
     VK_ICD_FILENAMES={{ _lavapipe }} cargo nextest run --all-targets --all-features
 
+# Re-send every UI preview to Telegram, ignoring the change gate.
+resend-all-previews:
+    LELE_PREVIEW_RESEND_ALL=1 VK_ICD_FILENAMES={{ _lavapipe }} cargo nextest run ui_png_preview ui_mp4_preview ui_scene_preview --all-features
+
 lint:
     lele-lint crates/telegram-bot-helper
     lele-lint crates/telegram-bot-helper-macros

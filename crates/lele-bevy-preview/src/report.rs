@@ -48,7 +48,6 @@ mod tests {
                 pixel_hash: String::from("h"),
                 media: Media::Png,
                 kind: scene::Kind::System,
-                unsent: false,
             },
             status,
         }

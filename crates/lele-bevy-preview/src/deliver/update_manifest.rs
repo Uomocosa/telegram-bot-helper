@@ -8,8 +8,8 @@ use crate::deliver::basic::structs::{Capture, Manifest};
 pub fn update_manifest(
     dir: &Path,
     crate_name: &str,
-    captures: &[Capture],
-    clip: Option<&Capture>,
+    recorded: &[&Capture],
+    pending: &[&Capture],
 ) -> Result<(), Error> {
     let empty = Manifest {
         crate_name: crate_name.to_string(),
@@ -17,7 +17,10 @@ pub fn update_manifest(
     };
     let mut merged = deliver::load_previous::load_previous(dir).unwrap_or(empty);
     merged.crate_name = crate_name.to_string();
-    for capture in captures.iter().chain(clip) {
+    for capture in pending {
+        merged.artifacts.remove(&capture.artifact.fingerprint);
+    }
+    for capture in recorded {
         merged.artifacts.insert(
             capture.artifact.fingerprint.clone(),
             capture.artifact.clone(),

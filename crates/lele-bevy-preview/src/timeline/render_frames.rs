@@ -20,11 +20,12 @@ pub fn render_frames(
     let target = preview::target_of::target_of(&mut app);
     let mut frames = Vec::new();
     let total = config.lead_in_frames.saturating_add(spec.frames);
+    let step = std::time::Duration::from_secs_f64(1.0 / f64::from(spec.fps));
     for index in 0..total {
         if index == config.lead_in_frames {
             (spec.apply)(app.world_mut());
         }
-        app.update();
+        preview::advance::advance(&mut app, step);
         let path = scratch.join(format!("frame-{:04}.png", index.saturating_add(1)));
         let image =
             preview::once::once(&mut app, target.clone(), &path, config.max_capture_frames)?;

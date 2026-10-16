@@ -43,7 +43,6 @@ mod tests {
                 pixel_hash: String::from("h"),
                 media,
                 kind: Kind::System,
-                unsent: false,
             },
             status,
         }
@@ -58,7 +57,7 @@ mod tests {
             text,
             "[system] sync_room_list\n1. 🖼 two rooms · same\n2. 🖼 three rooms · changed"
         );
-        let clip = capture("add", Media::Mp4, Status::FirstRun);
-        assert!(caption(Kind::App, "x", &[&clip]).contains("[app] x\n1. ▶ add · first run"));
+        let clip = capture("add", Media::Mp4, Status::New);
+        assert!(caption(Kind::App, "x", &[&clip]).contains("[app] x\n1. ▶ add · new"));
     }
 }

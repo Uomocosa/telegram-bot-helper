@@ -1,4 +1,5 @@
-use std::path::Path;
+use std::ffi::OsStr;
+use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 
 use bevy::image::Image;
@@ -9,8 +10,8 @@ use crate::Error;
 use crate::preview::basic::constants::PUMP_FRAMES;
 
 pub fn once(app: &mut App, target: Handle<Image>, out: &Path, budget: u32) -> Result<Image, Error> {
-    prepare_destination(out)?;
-    let Some(image) = request(app, target, out, budget) else {
+    let staging = prepare_destination(out)?;
+    let Some(image) = request(app, target, &staging, budget) else {
         settle(app);
         return Err(Error::NoFrame(budget));
     };
@@ -18,6 +19,7 @@ pub fn once(app: &mut App, target: Handle<Image>, out: &Path, budget: u32) -> Re
     if pixels.is_empty() {
         return Err(Error::BlankFrame(out.display().to_string()));
     }
+    std::fs::rename(&staging, out).map_err(|error| Error::Io(error.to_string()))?;
     Ok(image)
 }
 
@@ -48,13 +50,15 @@ fn settle(app: &mut App) {
     }
 }
 
-// needed helper: a stale file from a previous run would make a failed capture look like a success
-fn prepare_destination(out: &Path) -> Result<(), Error> {
+// needed helper: per-process staging file renamed over `out`, so parallel runs never see it missing
+fn prepare_destination(out: &Path) -> Result<PathBuf, Error> {
     let parent = out.parent().map(Path::to_path_buf);
     if let Some(parent) = parent {
         std::fs::create_dir_all(&parent).map_err(|error| Error::Io(error.to_string()))?;
     }
-    let _ = std::fs::remove_file(out);
-    Ok(())
+    let extension = out.extension().and_then(OsStr::to_str).unwrap_or("png");
+    let staging = out.with_extension(format!("{}.staging.{extension}", std::process::id()));
+    let _ = std::fs::remove_file(&staging);
+    Ok(staging)
 }
 // no test_usage necessary
