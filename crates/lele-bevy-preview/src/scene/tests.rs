@@ -112,4 +112,13 @@ fn test_usage_rejects_bad_labels_caps_and_fps() {
     };
     assert!(scene::check::check(&too_many).is_err());
 }
+
+#[test]
+fn test_usage_centered_root_fills_the_window_and_centres() {
+    let root = scene::centered_root();
+    assert_eq!(root.width, bevy::ui::Val::Percent(100.0));
+    assert_eq!(root.height, bevy::ui::Val::Percent(100.0));
+    assert_eq!(root.justify_content, bevy::ui::JustifyContent::Center);
+    assert_eq!(root.align_items, bevy::ui::AlignItems::Center);
+}
 // no test_usage necessary
