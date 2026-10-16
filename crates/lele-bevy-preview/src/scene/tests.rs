@@ -121,4 +121,41 @@ fn test_usage_centered_root_fills_the_window_and_centres() {
     assert_eq!(root.justify_content, bevy::ui::JustifyContent::Center);
     assert_eq!(root.align_items, bevy::ui::AlignItems::Center);
 }
+
+// needed helper: fixture shared by the tests in this file
+fn spawn_corner_node(mut commands: bevy::ecs::system::Commands) {
+    commands.spawn(bevy::ui::Node {
+        position_type: bevy::ui::PositionType::Absolute,
+        top: bevy::ui::Val::Px(48.0),
+        left: bevy::ui::Val::Px(12.0),
+        ..Default::default()
+    });
+}
+
+#[test]
+fn test_usage_center_roots_parents_every_root_under_one_centred_root() {
+    use bevy::ecs::schedule::IntoScheduleConfigs;
+    let mut app = App::new();
+    app.add_systems(
+        bevy::app::Startup,
+        (spawn_corner_node, scene::center_roots).chain(),
+    );
+    app.update();
+    let world = app.world_mut();
+    let mut roots = world.query_filtered::<&bevy::ui::Node, bevy::ecs::query::Without<bevy::ecs::hierarchy::ChildOf>>();
+    let parentless: Vec<&bevy::ui::Node> = roots.iter(world).collect();
+    assert_eq!(parentless.len(), 1);
+    assert!(
+        parentless
+            .iter()
+            .all(|node| node.justify_content == bevy::ui::JustifyContent::Center)
+    );
+    let mut moved = world
+        .query_filtered::<&bevy::ui::Node, bevy::ecs::query::With<bevy::ecs::hierarchy::ChildOf>>();
+    assert!(
+        moved
+            .iter(world)
+            .all(|node| node.position_type == bevy::ui::PositionType::Relative)
+    );
+}
 // no test_usage necessary

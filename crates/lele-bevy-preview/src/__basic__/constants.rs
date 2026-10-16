@@ -1,1 +1,1 @@
-pub const NO_CREDENTIALS: &str = "telegram credentials absent; artifact left on disk only";
+pub const NO_CREDENTIALS: &str = "PREVIEW_DELIVERY=skipped (no telegram credentials)";

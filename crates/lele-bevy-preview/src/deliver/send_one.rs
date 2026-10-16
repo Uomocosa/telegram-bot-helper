@@ -6,7 +6,7 @@ use crate::Error;
 
 pub fn send_one(path: &Path, caption: &str) -> Result<bool, Error> {
     let Some(creds) = telegram_bot_helper::load_creds() else {
-        tracing::warn!("{}", __basic__::constants::NO_CREDENTIALS);
+        println!("{}", __basic__::constants::NO_CREDENTIALS);
         return Ok(false);
     };
     let uploaded = if is_video(path) {

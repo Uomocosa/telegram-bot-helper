@@ -3295,7 +3295,7 @@ checksum = "20870f649af7073d53e38067b2a84312175d56ea15217e1b15bc83506ec50afb"
 
 [[package]]
 name = "lele-bevy-preview"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "bevy",
  "blake3",
@@ -5002,7 +5002,7 @@ dependencies = [
 
 [[package]]
 name = "telegram-bot-helper"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "atomic-delegate-macros",
  "chrono",
@@ -5015,7 +5015,7 @@ dependencies = [
 
 [[package]]
 name = "telegram-bot-helper-macros"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "proc-macro2",
  "quote",
