@@ -9,6 +9,27 @@ headless Bevy UI preview tool that uses them.
 | `telegram-bot-helper-macros` | `#[telegram_notify]` attribute macro |
 | `lele-bevy-preview` (`lele_bevy_preview`) | headless PNG/MP4 previews with change-gated Telegram delivery |
 
+## Dependencies and releases
+
+The three crates in this repo share one version and one tag. They depend on the
+sibling repository `lele-rust-linter` (`atomic-delegate-macros`), pinned in the
+workspace manifest:
+
+    atomic-delegate-macros = { git = "https://github.com/Uomocosa/lele-rust-linter", tag = "v0.0.3" }
+
+A git content filter (`lele-pins`) rewrites those pins to sibling `path =`
+dependencies in your working tree, so an edit in a dependency is picked up by the
+next `cargo build` here with no release and no command. Install it once per
+machine:
+
+    cd ../lele-release && just setup
+
+Never hand-edit a pin. From the fleet root, `just release <patch|minor|major>`
+bumps every changed repo, re-pins its dependents, tags `vX.Y.Z` and pushes; see
+`lele-release/README.md` for `status`, `--only`/`--exclude` and `--dry-run`. A
+plain clone without the filter resolves the committed tags, which is exactly what
+CI sees.
+
 ## Environment
 
 Install the toolchain and dev tools — no nix, no container, no setup script:
