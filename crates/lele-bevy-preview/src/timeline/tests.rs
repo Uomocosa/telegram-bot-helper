@@ -109,7 +109,7 @@ fn test_usage_a_missing_ffmpeg_binary_is_reported_not_ignored() {
     unsafe { std::env::set_var("LELE_FFMPEG", "/nonexistent/ffmpeg-binary") };
     let result = scene(Some(spec(2))).build_clip(&fast(dir.path()), None);
     unsafe { std::env::remove_var("LELE_FFMPEG") };
-    assert!(matches!(result, Err(crate::Error::Ffmpeg { .. })));
+    assert!(matches!(result, Err(crate::Error::FfmpegSpawn { .. })));
 }
 
 #[test]
