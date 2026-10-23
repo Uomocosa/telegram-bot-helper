@@ -1,7 +1,7 @@
 extern crate self as lele_bevy_preview;
 
 #[path = "__basic__/mod.rs"]
-pub mod __basic__;
+pub mod basic;
 
 pub mod deliver;
 pub mod error;

@@ -1,13 +1,13 @@
 use std::ffi::OsStr;
 use std::path::Path;
 
-use crate::__basic__;
 use crate::Error;
+use crate::basic;
 use crate::deliver;
 
 pub fn send_one(capture: &deliver::Capture, caption: &str) -> Result<bool, Error> {
     let Some(bot) = telegram_bot_helper::TelegramBot::from_env() else {
-        println!("{}", __basic__::constants::NO_CREDENTIALS);
+        println!("{}", basic::constants::NO_CREDENTIALS);
         return Ok(false);
     };
     let caption = telegram_bot_helper::Caption::from(caption);

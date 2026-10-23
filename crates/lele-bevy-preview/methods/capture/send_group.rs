@@ -15,7 +15,7 @@ pub fn send_group(items: &[&deliver::Capture], caption: &str) -> Result<usize, E
 // needed helper: albums need credentials too, and absent ones leave artifacts on disk only
 fn send_album(items: &[&deliver::Capture], caption: &str) -> Result<usize, Error> {
     let Some(bot) = telegram_bot_helper::TelegramBot::from_env() else {
-        println!("{}", crate::__basic__::constants::NO_CREDENTIALS);
+        println!("{}", crate::basic::constants::NO_CREDENTIALS);
         return Ok(0);
     };
     let media: Vec<telegram_bot_helper::MediaItem> = items
