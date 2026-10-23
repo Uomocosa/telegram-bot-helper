@@ -1,4 +1,3 @@
-use crate::timeline;
 use bevy::ecs::world::World;
 use bevy::prelude::App;
 
@@ -62,7 +61,8 @@ fn fast(dir: &std::path::Path) -> preview::Config {
 #[test]
 fn test_usage() {
     let dir = tempfile::tempdir().unwrap();
-    let clip = timeline::build_clip::build_clip(&scene(Some(spec(3))), &fast(dir.path()), None)
+    let clip = scene(Some(spec(3)))
+        .build_clip(&fast(dir.path()), None)
         .unwrap()
         .expect("a declared timeline must produce a clip");
     assert!(clip.path.exists(), "{} missing", clip.path.display());
@@ -72,8 +72,9 @@ fn test_usage() {
 #[test]
 fn test_usage_renders_the_lead_in_then_one_png_per_declared_frame() {
     let dir = tempfile::tempdir().unwrap();
-    let frames =
-        timeline::render_frames::render_frames(&scene(Some(spec(3))), &fast(dir.path())).unwrap();
+    let frames = scene(Some(spec(3)))
+        .render_frames(&fast(dir.path()))
+        .unwrap();
     assert_eq!(frames.len(), 5, "2 lead-in frames plus the 3 declared ones");
     for frame in &frames {
         assert!(frame.path.exists(), "{} missing", frame.path.display());
@@ -84,26 +85,17 @@ fn test_usage_renders_the_lead_in_then_one_png_per_declared_frame() {
 fn test_usage_a_scene_without_a_timeline_produces_no_frames() {
     let dir = tempfile::tempdir().unwrap();
     let config = fast(dir.path());
-    assert_eq!(
-        timeline::render_frames::render_frames(&scene(None), &config)
-            .unwrap()
-            .len(),
-        0
-    );
-    assert!(
-        timeline::build_clip::build_clip(&scene(None), &config, None)
-            .unwrap()
-            .is_none()
-    );
+    assert_eq!(scene(None).render_frames(&config).unwrap().len(), 0);
+    assert!(scene(None).build_clip(&config, None).unwrap().is_none());
 }
 
 #[test]
 fn test_usage_two_runs_produce_identical_pixels() {
     let dir = tempfile::tempdir().unwrap();
     let config = fast(dir.path());
-    let one = timeline::render_frames::render_frames(&scene(Some(spec(2))), &config).unwrap();
+    let one = scene(Some(spec(2))).render_frames(&config).unwrap();
     let first = std::fs::read(&one[1].path).unwrap();
-    let two = timeline::render_frames::render_frames(&scene(Some(spec(2))), &config).unwrap();
+    let two = scene(Some(spec(2))).render_frames(&config).unwrap();
     let second = std::fs::read(&two[1].path).unwrap();
     assert_eq!(
         first, second,
@@ -112,27 +104,10 @@ fn test_usage_two_runs_produce_identical_pixels() {
 }
 
 #[test]
-fn test_usage_empty_frame_list_is_an_encoding_error() {
-    let dir = tempfile::tempdir().unwrap();
-    let scratch = dir.path().join("frames");
-    let out = dir.path().join("clip.mp4");
-    let empty: Vec<std::path::PathBuf> = Vec::new();
-    assert!(matches!(
-        timeline::build::build(&empty, 30, &out, &scratch),
-        Err(crate::Error::Ffmpeg { .. })
-    ));
-}
-
-#[test]
 fn test_usage_a_missing_ffmpeg_binary_is_reported_not_ignored() {
     let dir = tempfile::tempdir().unwrap();
-    let scratch = dir.path().join("frames");
-    std::fs::create_dir_all(&scratch).unwrap();
-    let frame = scratch.join("frame-0001.png");
-    std::fs::write(&frame, b"not really a png").unwrap();
     unsafe { std::env::set_var("LELE_FFMPEG", "/nonexistent/ffmpeg-binary") };
-    let out = dir.path().join("clip.mp4");
-    let result = timeline::build::build(&[frame], 30, &out, &scratch);
+    let result = scene(Some(spec(2))).build_clip(&fast(dir.path()), None);
     unsafe { std::env::remove_var("LELE_FFMPEG") };
     assert!(matches!(result, Err(crate::Error::Ffmpeg { .. })));
 }
@@ -144,15 +119,16 @@ fn test_usage_a_clip_whose_frames_never_differ_is_rejected() {
         apply: noop,
         ..spec(3)
     };
-    let result = timeline::build_clip::build_clip(&scene(Some(flat)), &fast(dir.path()), None);
+    let result = scene(Some(flat)).build_clip(&fast(dir.path()), None);
     assert!(matches!(result, Err(crate::Error::StaticClip { .. })));
 }
 
 #[test]
 fn test_usage_the_baseline_precedes_the_change() {
     let dir = tempfile::tempdir().unwrap();
-    let frames =
-        timeline::render_frames::render_frames(&scene(Some(spec(3))), &fast(dir.path())).unwrap();
+    let frames = scene(Some(spec(3)))
+        .render_frames(&fast(dir.path()))
+        .unwrap();
     assert_eq!(
         frames[0].pixel_hash, frames[1].pixel_hash,
         "lead-in frames show the baseline"

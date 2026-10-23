@@ -1,13 +1,13 @@
-use telegram_bot_helper::load_creds;
+use telegram_bot_helper::TelegramBot;
 
 #[test]
 #[ignore = "needs TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID; polls getUpdates (read-only)"]
 fn live_read_updates() {
-    let Some(creds) = load_creds() else {
+    let Some(bot) = TelegramBot::from_env() else {
         eprintln!("skipping live_read_updates: no telegram creds");
         return;
     };
-    let updates = telegram_bot_helper::get_updates(&creds, None, 0).expect("live getUpdates");
+    let updates = bot.get_updates(None, 0).expect("live getUpdates");
     eprintln!("live_read_updates: {} update(s) in window", updates.len());
     let Ok(expect) = std::env::var("TELEGRAM_EXPECT_TEXT") else {
         return;
@@ -15,7 +15,7 @@ fn live_read_updates() {
     if expect.is_empty() {
         return;
     }
-    let latest = telegram_bot_helper::latest_message(&updates, &creds.chat_id);
+    let latest = bot.latest_message(&updates);
     let content = latest
         .and_then(|message| message.get("text").or_else(|| message.get("caption")))
         .and_then(|value| value.as_str())

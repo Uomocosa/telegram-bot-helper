@@ -316,8 +316,8 @@ dependencies = [
 
 [[package]]
 name = "atomic-delegate-macros"
-version = "0.0.1"
-source = "git+https://github.com/Uomocosa/lele-rust-linter?tag=v0.0.1#c96343298c7b304d2b7ce25e919cbc7c479e9642"
+version = "0.0.2"
+source = "git+https://github.com/Uomocosa/lele-rust-linter?tag=v0.0.2#f1e70036ff60ff7f34e03a4e304686f411a43512"
 dependencies = [
  "lele-snake-case",
  "proc-macro2",
@@ -3297,6 +3297,7 @@ checksum = "20870f649af7073d53e38067b2a84312175d56ea15217e1b15bc83506ec50afb"
 name = "lele-bevy-preview"
 version = "0.0.6"
 dependencies = [
+ "atomic-delegate-macros",
  "bevy",
  "blake3",
  "derive_more",
@@ -3311,8 +3312,8 @@ dependencies = [
 
 [[package]]
 name = "lele-snake-case"
-version = "0.0.1"
-source = "git+https://github.com/Uomocosa/lele-rust-linter?tag=v0.0.1#c96343298c7b304d2b7ce25e919cbc7c479e9642"
+version = "0.0.2"
+source = "git+https://github.com/Uomocosa/lele-rust-linter?tag=v0.0.2#f1e70036ff60ff7f34e03a4e304686f411a43512"
 
 [[package]]
 name = "libc"
@@ -5007,6 +5008,7 @@ version = "0.0.6"
 dependencies = [
  "atomic-delegate-macros",
  "chrono",
+ "derive_more",
  "dotenvy",
  "reqwest",
  "serde_json",

@@ -9,6 +9,7 @@ license.workspace = true
 name = "lele_bevy_preview"
 
 [dependencies]
+atomic-delegate-macros.workspace = true
 bevy.workspace = true
 blake3.workspace = true
 derive_more.workspace = true

@@ -38,18 +38,27 @@ fn manifest(entries: Vec<deliver::Artifact>) -> deliver::Manifest {
 
 #[test]
 fn test_usage() {
-    assert_eq!(deliver::slug("hover then press"), "hover_then_press");
-    assert_eq!(deliver::slug("A-B.c"), "a_b_c");
-    assert_eq!(deliver::fingerprint_of("ui", "rest"), "ui|rest");
-    assert_eq!(deliver::hash_bytes(b"abc"), deliver::hash_bytes(b"abc"));
-    assert_ne!(deliver::hash_bytes(b"abc"), deliver::hash_bytes(b"abd"));
     assert_eq!(
-        deliver::hash_bytes(b"abc").len(),
+        deliver::Artifact::slug("hover then press"),
+        "hover_then_press"
+    );
+    assert_eq!(deliver::Artifact::slug("A-B.c"), "a_b_c");
+    assert_eq!(deliver::Artifact::fingerprint_of("ui", "rest"), "ui|rest");
+    assert_eq!(
+        deliver::Artifact::hash_bytes(b"abc"),
+        deliver::Artifact::hash_bytes(b"abc")
+    );
+    assert_ne!(
+        deliver::Artifact::hash_bytes(b"abc"),
+        deliver::Artifact::hash_bytes(b"abd")
+    );
+    assert_eq!(
+        deliver::Artifact::hash_bytes(b"abc").len(),
         deliver::basic::constants::HASH_CHARS
     );
-    assert!(deliver::sendable(deliver::Status::Changed));
-    assert!(deliver::sendable(deliver::Status::New));
-    assert!(!deliver::sendable(deliver::Status::Same));
+    assert!(capture("rest", deliver::Status::Changed).is_sendable());
+    assert!(capture("rest", deliver::Status::New).is_sendable());
+    assert!(!capture("rest", deliver::Status::Same).is_sendable());
 }
 
 #[test]
@@ -58,29 +67,17 @@ fn test_usage_status_distinguishes_new_changed_and_same() {
     let same = artifact("ui", "rest", "a", "1");
     let changed = artifact("ui", "rest", "a", "2");
     let fresh = artifact("ui", "other", "b", "1");
-    assert_eq!(deliver::state_status(None, &same), deliver::Status::New);
-    assert_eq!(
-        deliver::state_status(Some(&before), &same),
-        deliver::Status::Same
-    );
-    assert_eq!(
-        deliver::state_status(Some(&before), &changed),
-        deliver::Status::Changed
-    );
-    assert_eq!(
-        deliver::state_status(Some(&before), &fresh),
-        deliver::Status::New
-    );
+    assert_eq!(same.status_in(None), deliver::Status::New);
+    assert_eq!(same.status_in(Some(&before)), deliver::Status::Same);
+    assert_eq!(changed.status_in(Some(&before)), deliver::Status::Changed);
+    assert_eq!(fresh.status_in(Some(&before)), deliver::Status::New);
 }
 
 #[test]
 fn test_usage_status_matches_by_scene_and_label_when_fingerprint_moved() {
     let before = manifest(vec![artifact("ui", "rest", "a", "1")]);
     let moved = artifact("ui", "rest", "a-renamed", "1");
-    assert_eq!(
-        deliver::state_status(Some(&before), &moved),
-        deliver::Status::Same
-    );
+    assert_eq!(moved.status_in(Some(&before)), deliver::Status::Same);
 }
 
 #[test]
@@ -90,12 +87,13 @@ fn test_usage_collect_labels_every_artifact_with_a_status() {
         label: String::from("rest"),
         pixel_hash: String::from("h1"),
     }];
-    let captures = deliver::collect("ui", scene::Kind::System, &rendered, None).unwrap();
+    let captures = deliver::Capture::collect("ui", scene::Kind::System, &rendered, None).unwrap();
     assert_eq!(captures.len(), 1);
     assert_eq!(captures[0].status, deliver::Status::New);
     assert_eq!(captures[0].artifact.fingerprint, "ui|rest");
     let previous = manifest(vec![captures[0].artifact.clone()]);
-    let again = deliver::collect("ui", scene::Kind::System, &rendered, Some(&previous)).unwrap();
+    let again =
+        deliver::Capture::collect("ui", scene::Kind::System, &rendered, Some(&previous)).unwrap();
     assert_eq!(again[0].status, deliver::Status::Same);
 }
 
@@ -105,18 +103,19 @@ fn test_usage_hash_file_reads_bytes_and_reports_missing_files() {
     let png = dir.path().join("bytes.png");
     std::fs::write(&png, b"pixel-bytes").unwrap();
     assert_eq!(
-        deliver::hash_file(&png).unwrap(),
-        deliver::hash_bytes(b"pixel-bytes")
+        deliver::Artifact::hash_file(&png).unwrap(),
+        deliver::Artifact::hash_bytes(b"pixel-bytes")
     );
-    assert!(deliver::hash_file(&dir.path().join("absent.png")).is_err());
+    assert!(deliver::Artifact::hash_file(&dir.path().join("absent.png")).is_err());
 }
 
 #[test]
 fn test_usage_manifest_round_trips_through_disk() {
     let dir = tempfile::tempdir().unwrap();
-    assert!(deliver::load_previous(dir.path()).is_none());
-    deliver::write_all(dir.path(), "demo", &[capture("rest", deliver::Status::New)]).unwrap();
-    let loaded = deliver::load_previous(dir.path()).unwrap();
+    assert!(deliver::Manifest::load(dir.path()).is_none());
+    deliver::Manifest::write_all(dir.path(), "demo", &[capture("rest", deliver::Status::New)])
+        .unwrap();
+    let loaded = deliver::Manifest::load(dir.path()).unwrap();
     assert_eq!(loaded.crate_name, "demo");
     assert_eq!(loaded.artifacts.len(), 1);
     assert!(
@@ -134,15 +133,16 @@ fn test_usage_manifest_round_trips_through_disk() {
 #[test]
 fn test_usage_update_manifest_records_sent_and_drops_pending() {
     let dir = tempfile::tempdir().unwrap();
-    deliver::write_all(dir.path(), "demo", &[capture("rest", deliver::Status::New)]).unwrap();
-    deliver::update_manifest(
+    deliver::Manifest::write_all(dir.path(), "demo", &[capture("rest", deliver::Status::New)])
+        .unwrap();
+    deliver::Manifest::update(
         dir.path(),
         "demo",
         &[&capture("hover", deliver::Status::New)],
         &[&capture("rest", deliver::Status::New)],
     )
     .unwrap();
-    let loaded = deliver::load_previous(dir.path()).unwrap();
+    let loaded = deliver::Manifest::load(dir.path()).unwrap();
     assert_eq!(
         loaded.artifacts.len(),
         1,
@@ -158,13 +158,13 @@ fn test_usage_changes_markdown_lists_only_what_moved() {
         capture("hover", deliver::Status::Changed),
         capture("press", deliver::Status::New),
     ];
-    let text = deliver::changes_markdown(&all);
+    let text = deliver::Capture::changes_markdown(&all);
     assert!(text.contains("1 changed, 1 new, 1 unchanged"));
     assert!(text.contains("hover"));
-    let quiet = deliver::changes_markdown(&[capture("rest", deliver::Status::Same)]);
+    let quiet = deliver::Capture::changes_markdown(&[capture("rest", deliver::Status::Same)]);
     assert!(quiet.contains("No UI state changed"));
-    assert!(deliver::changes_markdown(&[]).contains("No UI state changed"));
-    let fresh = deliver::changes_markdown(&[capture("press", deliver::Status::New)]);
+    assert!(deliver::Capture::changes_markdown(&[]).contains("No UI state changed"));
+    let fresh = deliver::Capture::changes_markdown(&[capture("press", deliver::Status::New)]);
     assert!(fresh.contains("0 changed, 1 new"));
 }
 // no test_usage necessary

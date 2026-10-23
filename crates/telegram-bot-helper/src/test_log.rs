@@ -10,9 +10,12 @@ pub struct TestLog {
 }
 
 #[atomic_delegates]
+impl From<&str> for TestLog {
+    fn from(test_name: &str) -> Self {}
+}
+
+#[atomic_delegates]
 impl TestLog {
-    #[must_use]
-    pub fn open(test_name: &str) -> Self {}
     pub fn line(&self, message: &str) {}
 }
 
@@ -22,7 +25,7 @@ mod tests {
 
     #[test]
     fn test_usage() {
-        let log = TestLog::open("test_log_delegate_smoke");
+        let log = TestLog::from("test_log_delegate_smoke");
         log.line("delegate smoke");
         let name = log.path.to_string_lossy();
         assert!(name.contains("test_log_delegate_smoke-"));

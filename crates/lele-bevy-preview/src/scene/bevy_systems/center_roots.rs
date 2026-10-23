@@ -15,7 +15,7 @@ pub fn center_roots(
     }
     let center = centers.single().unwrap_or_else(|_| {
         commands
-            .spawn((scene::PreviewCenter, scene::centered_root()))
+            .spawn((scene::PreviewCenter, scene::Scene::centered_root()))
             .id()
     });
     for (entity, mut node) in &mut roots {
@@ -90,34 +90,35 @@ mod tests {
     #[test]
     fn center_roots_ui_png_preview() {
         let out = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("ui_preview");
-        let report = lele_bevy_preview::run(
-            &lele_bevy_preview::scene::Scene {
-                name: String::from("center_roots"),
-                kind: lele_bevy_preview::scene::Kind::System,
-                build: preview_build,
-                states: vec![
-                    lele_bevy_preview::scene::State {
-                        label: String::from("pinned in the corner"),
-                        apply: preview_noop,
-                    },
-                    lele_bevy_preview::scene::State {
-                        label: String::from("centred"),
-                        apply: centre,
-                    },
-                ],
-                timeline: None,
-            },
-            &lele_bevy_preview::preview::Config {
-                out_dir: out,
-                ..Default::default()
-            },
-            env!("CARGO_PKG_NAME"),
-        )
-        .expect("preview");
+        let preview = lele_bevy_preview::scene::Scene {
+            name: String::from("center_roots"),
+            kind: lele_bevy_preview::scene::Kind::System,
+            build: preview_build,
+            states: vec![
+                lele_bevy_preview::scene::State {
+                    label: String::from("pinned in the corner"),
+                    apply: preview_noop,
+                },
+                lele_bevy_preview::scene::State {
+                    label: String::from("centred"),
+                    apply: centre,
+                },
+            ],
+            timeline: None,
+        };
+        let report = preview
+            .run(
+                &lele_bevy_preview::preview::Config {
+                    out_dir: out,
+                    ..Default::default()
+                },
+                env!("CARGO_PKG_NAME"),
+            )
+            .expect("preview");
         let [before, after] = report.captures.as_slice() else {
             panic!("expected two captures");
         };
-        assert!(lele_bevy_preview::layout::assert_capture_centered(before, 2).is_err());
-        lele_bevy_preview::layout::assert_capture_centered(after, 2).expect("centred");
+        assert!(before.assert_centered(2).is_err());
+        after.assert_centered(2).expect("centred");
     }
 }

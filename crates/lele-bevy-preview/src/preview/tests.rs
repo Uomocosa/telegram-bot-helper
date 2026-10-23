@@ -1,3 +1,4 @@
+use crate::PreviewApp;
 use crate::preview;
 use bevy::prelude::*;
 
@@ -52,49 +53,41 @@ fn test_usage() {
 }
 
 #[test]
-fn test_usage_install_produces_an_offscreen_target_and_a_camera() {
-    let config = preview::Config::default();
-    let mut app = App::new();
-    let target = preview::install(&mut app, &config);
-    assert_ne!(target, Handle::default());
-    let world = app.world_mut();
+fn test_usage_from_scene_produces_an_offscreen_target_and_a_camera() {
+    let mut app = PreviewApp::from_scene(&scene(), &preview::Config::default());
+    assert_ne!(app.target.clone(), Handle::default());
+    let world = app.app.world_mut();
     let mut cameras = world.query_filtered::<Entity, With<bevy::camera::RenderTarget>>();
     assert!(cameras.iter(world).count() > 0);
 }
 
 #[test]
-fn test_usage_once_writes_a_non_empty_png_and_creates_parents() {
-    let config = preview::Config::default();
-    let mut app = App::new();
-    let target = preview::install(&mut app, &config);
+fn test_usage_capture_writes_a_non_empty_png_and_creates_parents() {
+    let mut app = PreviewApp::from_scene(&scene(), &preview::Config::default());
     let dir = tempfile::tempdir().unwrap();
     let out = dir.path().join("nested/deeper/frame.png");
-    let image = preview::once(&mut app, target, &out, 240).unwrap();
-    assert!(image.data.is_some_and(|data| !data.is_empty()));
+    let image = app.capture(&out, 240).unwrap();
+    assert!(matches!(image.bytes(), [_, ..]));
     assert!(out.exists());
 }
 
 #[test]
 fn test_usage_settled_returns_a_frame_once_two_readbacks_match() {
-    let config = preview::Config::default();
-    let mut app = App::new();
-    let target = preview::install(&mut app, &config);
+    let mut app = PreviewApp::from_scene(&scene(), &preview::Config::default());
     let dir = tempfile::tempdir().unwrap();
     let out = dir.path().join("settled.png");
-    let image = preview::settled(&mut app, &target, &out, 240, 1).unwrap();
-    assert!(image.data.is_some_and(|data| !data.is_empty()));
+    let image = app.settled(&out, 240, 1).unwrap();
+    assert!(matches!(image.bytes(), [_, ..]));
     assert!(out.exists());
 }
 
 #[test]
 fn test_usage_a_zero_frame_budget_reports_no_frame() {
-    let config = preview::Config::default();
-    let mut app = App::new();
-    let target = preview::install(&mut app, &config);
+    let mut app = PreviewApp::from_scene(&scene(), &preview::Config::default());
     let dir = tempfile::tempdir().unwrap();
     let out = dir.path().join("missing.png");
     assert!(matches!(
-        preview::once(&mut app, target, &out, 0),
+        app.capture(&out, 0),
         Err(crate::Error::NoFrame(0))
     ));
 }
@@ -102,7 +95,7 @@ fn test_usage_a_zero_frame_budget_reports_no_frame() {
 #[test]
 fn test_usage_render_states_writes_one_png_per_state_named_after_the_scene() {
     let dir = tempfile::tempdir().unwrap();
-    let rendered = preview::render_states(&scene(), &fast(dir.path())).unwrap();
+    let rendered = scene().render_states(&fast(dir.path())).unwrap();
     assert_eq!(rendered.len(), 2);
     for state in &rendered {
         assert!(state.path.exists(), "{} missing", state.path.display());
@@ -127,16 +120,14 @@ fn test_usage_render_states_rejects_an_invalid_scene_before_rendering() {
         states: Vec::new(),
         ..scene()
     };
-    assert!(preview::render_states(&broken, &fast(dir.path())).is_err());
+    assert!(broken.render_states(&fast(dir.path())).is_err());
 }
 
 #[test]
-fn test_usage_build_warmup_and_target_of_are_usable_together() {
-    let dir = tempfile::tempdir().unwrap();
-    let config = fast(dir.path());
-    let mut app = preview::build(&scene(), &config);
-    preview::warmup(&mut app, &config);
-    app.update();
-    assert_ne!(preview::target_of(&mut app), Handle::default());
+fn test_usage_from_scene_warmup_and_target_are_usable_together() {
+    let mut app = PreviewApp::from_scene(&scene(), &preview::Config::default());
+    app.warmup();
+    app.app.update();
+    assert_ne!(app.target.clone(), Handle::default());
 }
 // no test_usage necessary

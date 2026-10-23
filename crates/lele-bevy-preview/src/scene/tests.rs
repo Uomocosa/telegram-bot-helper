@@ -42,7 +42,7 @@ fn spec(frames: u32, fps: u32) -> Timeline {
 
 #[test]
 fn test_usage() {
-    assert!(scene::check::check(&scene()).is_ok());
+    assert!(scene().check().is_ok());
     assert!(matches!(scene().states.first(), Some(State { .. })));
     assert!(matches!(scene().timeline, Some(Timeline { frames: 4, .. })));
 }
@@ -53,21 +53,18 @@ fn test_usage_rejects_empty_states_zero_frames_and_blank_names() {
         states: Vec::new(),
         ..scene()
     };
-    assert!(matches!(
-        scene::check::check(&no_states),
-        Err(Error::Scene(_))
-    ));
+    assert!(matches!(no_states.check(), Err(Error::Scene(_))));
     let zero_frames = scene::Scene {
         timeline: Some(spec(0, 60)),
         ..scene()
     };
-    assert!(scene::check::check(&zero_frames).is_err());
+    assert!(zero_frames.check().is_err());
     let unnamed = scene::Scene {
         name: String::new(),
         kind: scene::Kind::System,
         ..scene()
     };
-    assert!(scene::check::check(&unnamed).is_err());
+    assert!(unnamed.check().is_err());
 }
 
 #[test]
@@ -79,26 +76,29 @@ fn test_usage_rejects_bad_labels_caps_and_fps() {
         }],
         ..scene()
     };
-    assert!(scene::check::check(&blank_label).is_err());
+    assert!(blank_label.check().is_err());
     assert!(
-        scene::check::check(&Scene {
+        Scene {
             timeline: Some(spec(2, 0)),
             ..scene()
-        })
+        }
+        .check()
         .is_err()
     );
     assert!(
-        scene::check::check(&Scene {
+        Scene {
             timeline: Some(spec(2, 5000)),
             ..scene()
-        })
+        }
+        .check()
         .is_err()
     );
     assert!(
-        scene::check::check(&Scene {
+        Scene {
             timeline: Some(spec(5000, 60)),
             ..scene()
-        })
+        }
+        .check()
         .is_err()
     );
     let too_many = scene::Scene {
@@ -110,12 +110,12 @@ fn test_usage_rejects_bad_labels_caps_and_fps() {
             .collect(),
         ..scene()
     };
-    assert!(scene::check::check(&too_many).is_err());
+    assert!(too_many.check().is_err());
 }
 
 #[test]
 fn test_usage_centered_root_fills_the_window_and_centres() {
-    let root = scene::centered_root();
+    let root = Scene::centered_root();
     assert_eq!(root.width, bevy::ui::Val::Percent(100.0));
     assert_eq!(root.height, bevy::ui::Val::Percent(100.0));
     assert_eq!(root.justify_content, bevy::ui::JustifyContent::Center);

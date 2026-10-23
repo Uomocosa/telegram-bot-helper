@@ -1,46 +1,13 @@
 #[path = "__basic__/mod.rs"]
 pub mod basic;
+
 pub use basic::enums::Media;
 pub use basic::enums::Status;
-pub use basic::structs::{Artifact, Capture, Manifest};
 
-pub mod caption;
-pub mod changes_markdown;
-pub mod collect;
-pub mod file_name;
-pub mod fingerprint_of;
-pub mod hash_bytes;
-pub mod hash_file;
-pub mod keep_on_disk;
-pub mod load_previous;
-pub mod manifest_name;
-pub mod resend_all;
-pub mod send_changed;
-pub mod send_group;
-pub mod send_one;
-pub mod sendable;
-pub mod slug;
-pub mod state_status;
-pub mod status_word;
-pub mod update_manifest;
-pub mod write_all;
+pub mod artifact;
+pub mod capture;
+pub mod manifest;
 
-pub use caption::caption;
-pub use changes_markdown::changes_markdown;
-pub use collect::collect;
-pub use file_name::file_name;
-pub use fingerprint_of::fingerprint_of;
-pub use hash_bytes::hash_bytes;
-pub use hash_file::hash_file;
-pub use keep_on_disk::keep_on_disk;
-pub use load_previous::load_previous;
-pub use resend_all::resend_all;
-pub use send_changed::send_changed;
-pub use send_group::send_group;
-pub use send_one::send_one;
-pub use sendable::sendable;
-pub use slug::slug;
-pub use state_status::state_status;
-pub use status_word::status_word;
-pub use update_manifest::update_manifest;
-pub use write_all::write_all;
+pub use artifact::Artifact;
+pub use capture::Capture;
+pub use manifest::Manifest;

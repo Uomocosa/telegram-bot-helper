@@ -1,4 +1,5 @@
-use telegram_bot_helper::load_creds;
+use telegram_bot_helper::Caption;
+use telegram_bot_helper::TelegramBot;
 
 fn assert_arrived(id: &str) {
     assert!(
@@ -24,11 +25,12 @@ fn ffmpeg_media(args: &[&str], path: &std::path::Path) -> Option<Vec<u8>> {
 #[test]
 #[ignore = "needs TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID; sends a real message"]
 fn live_send_text() {
-    let Some(creds) = load_creds() else {
+    let Some(bot) = TelegramBot::from_env() else {
         eprintln!("skipping live_send_text: no telegram creds");
         return;
     };
-    let id = telegram_bot_helper::send_text(&creds, "telegram_bot live test: send_text OK")
+    let id = bot
+        .send_text("telegram_bot live test: send_text OK")
         .expect("live send_text");
     assert_arrived(&id);
 }
@@ -36,7 +38,7 @@ fn live_send_text() {
 #[test]
 #[ignore = "needs TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID and ffmpeg; sends a real photo"]
 fn live_send_photo() {
-    let Some(creds) = load_creds() else {
+    let Some(bot) = TelegramBot::from_env() else {
         eprintln!("skipping live_send_photo: no telegram creds");
         return;
     };
@@ -56,15 +58,15 @@ fn live_send_photo() {
         eprintln!("skipping live_send_photo: ffmpeg unavailable");
         return;
     };
-    let caption = "telegram_bot live test: send_photo OK";
-    let id = telegram_bot_helper::send_photo(&creds, &png, caption).expect("live send_photo");
+    let caption = Caption::from("telegram_bot live test: send_photo OK");
+    let id = bot.send_photo(&png, &caption).expect("live send_photo");
     assert_arrived(&id);
 }
 
 #[test]
 #[ignore = "needs TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID and ffmpeg; sends a real 1s clip"]
 fn live_send_video() {
-    let Some(creds) = load_creds() else {
+    let Some(bot) = TelegramBot::from_env() else {
         eprintln!("skipping live_send_video: no telegram creds");
         return;
     };
@@ -86,8 +88,7 @@ fn live_send_video() {
         eprintln!("skipping live_send_video: ffmpeg unavailable");
         return;
     };
-    let id =
-        telegram_bot_helper::send_video(&creds, &bytes, "telegram_bot live test: send_video OK")
-            .expect("live send_video");
+    let caption = Caption::from("telegram_bot live test: send_video OK");
+    let id = bot.send_video(&bytes, &caption).expect("live send_video");
     assert_arrived(&id);
 }

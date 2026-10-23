@@ -14,7 +14,7 @@ license = "MIT OR Apache-2.0"
 telegram-bot-helper = { path = "crates/telegram-bot-helper" }
 telegram-bot-helper-macros = { path = "crates/telegram-bot-helper-macros" }
 
-atomic-delegate-macros = { git = "https://github.com/Uomocosa/lele-rust-linter", tag = "v0.0.1" }
+atomic-delegate-macros = { git = "https://github.com/Uomocosa/lele-rust-linter", tag = "v0.0.2" }
 bevy = { version = "=0.19.1", default-features = false, features = ["2d", "ui"] }
 blake3 = "1.8"
 chrono = { version = "=0.4.45", default-features = false, features = ["clock"] }

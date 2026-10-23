@@ -8,6 +8,7 @@ license.workspace = true
 [dependencies]
 atomic-delegate-macros.workspace = true
 chrono.workspace = true
+derive_more = { workspace = true, features = ["from"] }
 dotenvy.workspace = true
 reqwest.workspace = true
 serde_json.workspace = true

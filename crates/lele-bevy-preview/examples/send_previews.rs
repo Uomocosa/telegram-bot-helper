@@ -7,14 +7,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         || std::env::temp_dir().join("lele-bevy-preview"),
         PathBuf::from,
     );
-    let Some(manifest) = deliver::load_previous::load_previous(&dir) else {
+    let Some(manifest) = deliver::Manifest::load(&dir) else {
         eprintln!("no manifest in {}", dir.display());
         return Ok(());
     };
     let mut sent = 0usize;
     for artifact in manifest.artifacts.values() {
-        let path = artifact_path(&dir, artifact);
-        if path.exists() && deliver::send_one::send_one(&path, &artifact.label)? {
+        let capture = deliver::Capture {
+            path: artifact_path(&dir, artifact),
+            artifact: artifact.clone(),
+            status: deliver::Status::New,
+        };
+        if capture.path.exists() && capture.send_one(&artifact.label)? {
             sent = sent.saturating_add(1);
         }
     }
@@ -31,7 +35,7 @@ fn artifact_path(dir: &Path, artifact: &deliver::Artifact) -> PathBuf {
     dir.join(format!(
         "{}__{}.{}",
         artifact.scene,
-        deliver::slug(&artifact.label),
+        deliver::Artifact::slug(&artifact.label),
         ext
     ))
 }

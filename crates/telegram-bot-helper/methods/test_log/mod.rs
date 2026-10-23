@@ -1,4 +1,4 @@
+mod from_str;
 mod line;
-mod open;
+pub use from_str::from_str;
 pub use line::line;
-pub use open::open;

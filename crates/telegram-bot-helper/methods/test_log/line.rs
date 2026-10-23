@@ -26,7 +26,7 @@ mod tests {
 
     #[test]
     fn test_usage() {
-        let log = TestLog::open("test_log_line_smoke");
+        let log = TestLog::from("test_log_line_smoke");
         line(&log, "line smoke");
         let body = std::fs::read_to_string(&log.path).unwrap_or_default();
         assert!(body.contains("line smoke"));

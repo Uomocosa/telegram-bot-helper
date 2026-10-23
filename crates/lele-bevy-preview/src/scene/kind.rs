@@ -1,4 +1,7 @@
+use atomic_delegate_macros::atomic_delegates;
 use serde::{Deserialize, Serialize};
+
+use crate::deliver;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum Kind {
@@ -20,6 +23,12 @@ impl Kind {
             Self::App => "[app]",
         }
     }
+}
+
+#[atomic_delegates]
+impl Kind {
+    #[must_use]
+    pub fn caption(self, scene_name: &str, items: &[&deliver::Capture]) -> String {}
 }
 
 #[cfg(test)]

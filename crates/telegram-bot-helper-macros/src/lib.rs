@@ -19,7 +19,7 @@ fn prepend_guard(fun: &mut ItemFn) {
     fun.block.stmts.insert(
         0,
         syn::parse_quote! {
-            let _telegram_guard = telegram_bot_helper::guard::Guard::start(#name);
+            let _telegram_guard = telegram_bot_helper::guard::Guard::from(#name);
         },
     );
 }
@@ -37,6 +37,6 @@ mod tests {
         prepend_guard(&mut fun);
         assert_eq!(fun.block.stmts.len(), 1);
         let rendered = quote::quote!(#fun).to_string();
-        assert!(rendered.contains("Guard :: start"));
+        assert!(rendered.contains("Guard :: from"));
     }
 }

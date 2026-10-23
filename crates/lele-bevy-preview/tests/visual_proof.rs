@@ -61,7 +61,7 @@ fn writes_a_viewable_png_of_a_real_ui_node_with_text() {
         max_capture_frames: 300,
         ..Config::default()
     };
-    let rendered = lele_bevy_preview::preview::render_states(&scene(), &config).unwrap();
+    let rendered = scene().render_states(&config).unwrap();
     let state = &rendered[0];
     assert_eq!(state.label, "blue");
     assert_eq!(state.pixel_hash.len(), 16);

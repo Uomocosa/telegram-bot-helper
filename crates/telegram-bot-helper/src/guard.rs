@@ -1,15 +1,12 @@
-use crate::load_creds;
-use crate::send_text;
-use crate::status_enabled;
+use crate::TelegramBot;
 
 pub struct Guard {
     pub name: String,
     pub start: std::time::Instant,
 }
 
-impl Guard {
-    #[must_use]
-    pub fn start(name: &str) -> Self {
+impl From<&str> for Guard {
+    fn from(name: &str) -> Self {
         Self {
             name: name.to_string(),
             start: std::time::Instant::now(),
@@ -19,22 +16,16 @@ impl Guard {
 
 impl Drop for Guard {
     fn drop(&mut self) {
+        if !TelegramBot::is_status_reporting_enabled() {
+            return;
+        }
         let status = if std::thread::panicking() {
             "FAILED"
         } else {
             "PASSED"
         };
         let text = format!("{} {} in {:?}", status, self.name, self.start.elapsed());
-        if !status_enabled() {
-            return;
-        }
-        let Some(creds) = load_creds() else {
-            eprintln!("telegram skipped (no creds): {text}");
-            return;
-        };
-        if let Err(err) = send_text(&creds, &text) {
-            eprintln!("telegram send failed: {err}");
-        }
+        TelegramBot::send_text_best_effort(&text);
     }
 }
 
@@ -44,7 +35,7 @@ mod tests {
 
     #[test]
     fn test_usage() {
-        let guard = Guard::start("guard_start_smoke");
+        let guard = Guard::from("guard_start_smoke");
         assert_eq!(guard.name, "guard_start_smoke");
     }
 }

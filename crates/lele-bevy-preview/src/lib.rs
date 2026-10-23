@@ -3,20 +3,21 @@ extern crate self as lele_bevy_preview;
 #[path = "__basic__/mod.rs"]
 pub mod __basic__;
 
+pub mod deliver;
 pub mod error;
 pub use error::Error;
 
-pub mod deliver;
 pub mod layout;
+#[path = "../methods/mod.rs"]
+pub mod methods;
 pub mod preview;
+mod preview_app;
 pub mod report;
-mod run;
 pub mod scene;
 pub mod timeline;
 
+pub use preview_app::PreviewApp;
 pub use report::Report;
-pub use run::build_report::build_report;
-pub use run::run;
 
 #[cfg(test)]
 #[path = "deliver/tests.rs"]

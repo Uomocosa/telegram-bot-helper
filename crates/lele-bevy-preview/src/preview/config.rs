@@ -5,6 +5,7 @@ use crate::preview::basic::constants::{
     DEFAULT_MIN_DISTINCT_COLORS, DEFAULT_WARMUP_FRAMES, DEFAULT_WIDTH,
 };
 
+#[derive(Clone)]
 pub struct Config {
     pub width: u32,
     pub height: u32,
