@@ -2,8 +2,18 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("preview directory could not be prepared: {0}")]
-    Io(String),
+    #[error("preview file i/o failed")]
+    Io(#[from] std::io::Error),
+
+    #[error("preview manifest could not be serialised")]
+    Json(#[from] serde_json::Error),
+
+    #[error("cannot open image {}", path.display())]
+    Image {
+        path: std::path::PathBuf,
+        #[source]
+        source: image::ImageError,
+    },
 
     #[error("preview scene is invalid: {0}")]
     Scene(String),
@@ -34,6 +44,13 @@ pub enum Error {
     #[error("ffmpeg failed for {path}: {message}")]
     Ffmpeg { path: String, message: String },
 
+    #[error("ffmpeg could not be started for {path}")]
+    FfmpegSpawn {
+        path: String,
+        #[source]
+        source: std::io::Error,
+    },
+
     #[error(
         "capture {path} is not centred: content centre is ({x}, {y}), the frame centre is ({expected_x}, {expected_y}), tolerance {tolerance}px"
     )]
@@ -49,7 +66,7 @@ pub enum Error {
     #[error("capture {0} shows only background, so there is nothing to centre")]
     NoContent(String),
 
-    #[error("telegram delivery failed: {0}")]
-    Telegram(String),
+    #[error("telegram delivery failed")]
+    Telegram(#[from] telegram_bot_helper::Error),
 }
 // no test_usage necessary

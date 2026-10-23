@@ -1,10 +1,11 @@
+use atomic_delegate_macros::atomic_delegates;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("telegram {op}: empty payload")]
     EmptyPayload { op: &'static str },
-    #[error("telegram read {path}: {source}")]
+    #[error("telegram read {path}")]
     Read {
         path: String,
         source: std::io::Error,
@@ -21,14 +22,24 @@ pub enum Error {
     NotMp4 { path: String },
     #[error("telegram album needs 2..=10 items, got {count}")]
     BadAlbumSize { count: usize },
-    #[error("telegram {op} request failed: {message}")]
-    Request { op: &'static str, message: String },
+    #[error("telegram {op} request failed")]
+    Request {
+        op: &'static str,
+        #[source]
+        source: reqwest::Error,
+    },
     #[error("telegram {op} failed: status={status} body={snippet}")]
     Rejected {
         op: &'static str,
         status: String,
         snippet: String,
     },
+}
+
+#[atomic_delegates]
+impl Error {
+    #[must_use]
+    pub fn with_causes(&self) -> String {}
 }
 
 #[cfg(test)]

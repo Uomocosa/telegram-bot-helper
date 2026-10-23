@@ -25,7 +25,7 @@ pub fn capture(
     if pixels.is_empty() {
         return Err(Error::BlankFrame(out.display().to_string()));
     }
-    std::fs::rename(&staging, out).map_err(|error| Error::Io(error.to_string()))?;
+    std::fs::rename(&staging, out).map_err(Error::Io)?;
     Ok(preview::CapturedImage(image))
 }
 
@@ -61,7 +61,7 @@ fn settle(app: &mut PreviewApp) {
 fn prepare_destination(out: &Path) -> Result<PathBuf, Error> {
     let parent = out.parent().map(Path::to_path_buf);
     if let Some(parent) = parent {
-        std::fs::create_dir_all(&parent).map_err(|error| Error::Io(error.to_string()))?;
+        std::fs::create_dir_all(&parent).map_err(Error::Io)?;
     }
     let extension = out.extension().and_then(OsStr::to_str).unwrap_or("png");
     let staging = out.with_extension(format!("{}.staging.{extension}", std::process::id()));

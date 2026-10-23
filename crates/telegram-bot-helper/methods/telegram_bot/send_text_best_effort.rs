@@ -6,7 +6,7 @@ pub fn send_text_best_effort(text: &str) {
         return;
     };
     if let Err(err) = bot.send_text(text) {
-        eprintln!("telegram send failed: {err}");
+        eprintln!("telegram send failed: {}", err.with_causes());
     }
 }
 

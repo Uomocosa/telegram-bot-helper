@@ -6,7 +6,10 @@ use crate::layout;
 
 pub fn of_image(path: &Path) -> Result<Option<layout::Bounds>, Error> {
     let image = image::open(path)
-        .map_err(|error| Error::Io(format!("{}: {error}", path.display())))?
+        .map_err(|source| Error::Image {
+            path: path.to_path_buf(),
+            source,
+        })?
         .to_rgba8();
     let Some(background) = most_common(&image) else {
         return Ok(None);

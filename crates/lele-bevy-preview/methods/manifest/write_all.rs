@@ -18,16 +18,14 @@ pub fn write_all(dir: &Path, crate_name: &str, captures: &[deliver::Capture]) ->
             })
             .collect::<BTreeMap<_, _>>(),
     };
-    let json =
-        serde_json::to_string_pretty(&manifest).map_err(|error| Error::Io(error.to_string()))?;
-    std::fs::create_dir_all(dir).map_err(|error| Error::Io(error.to_string()))?;
-    std::fs::write(dir.join(constants::MANIFEST_FILE), json)
-        .map_err(|error| Error::Io(error.to_string()))?;
+    let json = serde_json::to_string_pretty(&manifest)?;
+    std::fs::create_dir_all(dir).map_err(Error::Io)?;
+    std::fs::write(dir.join(constants::MANIFEST_FILE), json).map_err(Error::Io)?;
     std::fs::write(
         dir.join(constants::CHANGES_FILE),
         deliver::Capture::changes_markdown(captures),
     )
-    .map_err(|error| Error::Io(error.to_string()))
+    .map_err(Error::Io)
 }
 
 #[cfg(test)]

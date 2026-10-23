@@ -29,8 +29,7 @@ fn send_album(items: &[&deliver::Capture], caption: &str) -> Result<usize, Error
         items: &media,
         caption: telegram_bot_helper::Caption::from(caption),
     };
-    bot.send_media_group(&group)
-        .map_err(|error| Error::Telegram(error.to_string()))?;
+    bot.send_media_group(&group).map_err(Error::Telegram)?;
     Ok(items.len())
 }
 

@@ -26,11 +26,9 @@ pub fn update(
             capture.artifact.clone(),
         );
     }
-    let json =
-        serde_json::to_string_pretty(&merged).map_err(|error| Error::Io(error.to_string()))?;
-    std::fs::create_dir_all(dir).map_err(|error| Error::Io(error.to_string()))?;
-    std::fs::write(dir.join(constants::MANIFEST_FILE), json)
-        .map_err(|error| Error::Io(error.to_string()))
+    let json = serde_json::to_string_pretty(&merged)?;
+    std::fs::create_dir_all(dir).map_err(Error::Io)?;
+    std::fs::write(dir.join(constants::MANIFEST_FILE), json).map_err(Error::Io)
 }
 
 #[cfg(test)]

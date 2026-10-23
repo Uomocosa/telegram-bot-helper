@@ -19,7 +19,7 @@ pub fn send_text(bot: &TelegramBot, text: &str) -> Result<String, Error> {
         .send()
         .map_err(|err| Error::Request {
             op: "sendMessage",
-            message: err.to_string(),
+            source: err,
         })?;
     let status = response.status();
     let status_text = status.to_string();

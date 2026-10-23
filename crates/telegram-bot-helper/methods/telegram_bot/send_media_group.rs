@@ -31,7 +31,7 @@ pub fn send_media_group(bot: &TelegramBot, group: &MediaGroup) -> Result<Vec<Str
             format!("file{index}"),
             part.mime_str(mime).map_err(|err| Error::Request {
                 op: "sendMediaGroup",
-                message: err.to_string(),
+                source: err,
             })?,
         );
     }
@@ -43,7 +43,7 @@ pub fn send_media_group(bot: &TelegramBot, group: &MediaGroup) -> Result<Vec<Str
         .send()
         .map_err(|err| Error::Request {
             op: "sendMediaGroup",
-            message: err.to_string(),
+            source: err,
         })?;
     let status = response.status();
     let status_text = status.to_string();

@@ -29,7 +29,7 @@ pub fn send_video(bot: &TelegramBot, bytes: &[u8], caption: &Caption) -> Result<
         .send()
         .map_err(|err| Error::Request {
             op: "sendVideo",
-            message: err.to_string(),
+            source: err,
         })?;
     let status = response.status();
     let status_text = status.to_string();

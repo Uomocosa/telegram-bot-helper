@@ -4,7 +4,7 @@ use crate::Error;
 use crate::deliver;
 
 pub fn hash_file(path: &Path) -> Result<String, Error> {
-    let bytes = std::fs::read(path).map_err(|error| Error::Io(error.to_string()))?;
+    let bytes = std::fs::read(path).map_err(Error::Io)?;
     Ok(deliver::Artifact::hash_bytes(&bytes))
 }
 

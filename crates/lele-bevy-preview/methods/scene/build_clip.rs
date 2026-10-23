@@ -68,7 +68,7 @@ fn ffmpeg_build(
             message: String::from("no frames were captured"),
         });
     }
-    std::fs::create_dir_all(scratch).map_err(|error| Error::Io(error.to_string()))?;
+    std::fs::create_dir_all(scratch).map_err(Error::Io)?;
     let destination = out.to_path_buf();
     let status = Command::new(ffmpeg_binary())
         .arg("-y")
@@ -86,9 +86,9 @@ fn ffmpeg_build(
         .arg(fps.to_string())
         .arg(&destination)
         .status()
-        .map_err(|error| Error::Ffmpeg {
+        .map_err(|source| Error::FfmpegSpawn {
             path: destination.display().to_string(),
-            message: error.to_string(),
+            source,
         })?;
     if !status.success() {
         return Err(Error::Ffmpeg {

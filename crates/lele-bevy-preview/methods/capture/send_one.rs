@@ -16,7 +16,7 @@ pub fn send_one(capture: &deliver::Capture, caption: &str) -> Result<bool, Error
     } else {
         bot.send_photo_file(&capture.path, &caption)
     };
-    uploaded.map_err(|error| Error::Telegram(error.to_string()))?;
+    uploaded.map_err(Error::Telegram)?;
     Ok(true)
 }
 

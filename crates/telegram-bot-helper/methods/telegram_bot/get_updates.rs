@@ -22,7 +22,7 @@ pub fn get_updates(
         .send()
         .map_err(|err| Error::Request {
             op: "getUpdates",
-            message: err.to_string(),
+            source: err,
         })?;
     let status = response.status();
     let status_text = status.to_string();

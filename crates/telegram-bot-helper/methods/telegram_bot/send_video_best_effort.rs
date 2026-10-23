@@ -13,7 +13,11 @@ pub fn send_video_best_effort(clip: &Path, caption: &Caption) {
             "telegram video sent: message_id={message} clip={}",
             clip.display()
         ),
-        Err(err) => eprintln!("telegram send failed: {err} clip={}", clip.display()),
+        Err(err) => eprintln!(
+            "telegram send failed: {} clip={}",
+            err.with_causes(),
+            clip.display()
+        ),
     }
 }
 
