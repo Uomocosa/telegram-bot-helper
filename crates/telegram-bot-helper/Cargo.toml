@@ -15,6 +15,9 @@ serde_json.workspace = true
 telegram-bot-helper-macros.workspace = true
 thiserror.workspace = true
 
+[dev-dependencies]
+rstest.workspace = true
+
 [lints.rust]
 non_snake_case = "allow"
 
