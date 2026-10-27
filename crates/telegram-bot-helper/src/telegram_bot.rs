@@ -6,6 +6,7 @@ use serde_json::Value;
 use crate::Caption;
 use crate::Error;
 use crate::MediaGroup;
+use crate::MediaItem;
 
 pub struct TelegramBot {
     pub token: String,
@@ -30,6 +31,13 @@ impl TelegramBot {
     pub fn latest_message<'u>(&self, updates: &'u [Value]) -> Option<&'u Value> {}
     pub fn send_text_best_effort(text: &str) {}
     pub fn send_video_best_effort(clip: &Path, caption: &Caption) {}
+    pub(crate) fn read_album_item(item: &MediaItem) -> Result<Vec<u8>, Error> {}
+}
+
+#[rustfmt::skip]
+impl TelegramBot {
+    pub(crate) fn is_png(bytes: &[u8]) -> bool { bytes.starts_with(&[137, 80, 78, 71, 13, 10, 26, 10]) }
+    pub(crate) fn has_ftyp(bytes: &[u8]) -> bool { bytes.windows(4).any(|window| window == b"ftyp") }
 }
 
 #[cfg(test)]
@@ -73,6 +81,10 @@ mod tests {
         assert!(bot.send_media_group(&group).is_err());
         let updates: Vec<Value> = Vec::new();
         assert!(bot.latest_message(&updates).is_none());
+        assert!(TelegramBot::is_png(&[137, 80, 78, 71, 13, 10, 26, 10, 0]));
+        assert!(!TelegramBot::is_png(b"GIF89a"));
+        assert!(TelegramBot::has_ftyp(b"\0\0\0\x18ftypmp42"));
+        assert!(!TelegramBot::has_ftyp(b"moov"));
     }
 
     #[test]

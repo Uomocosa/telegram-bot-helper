@@ -4,6 +4,7 @@ use atomic_delegate_macros::atomic_delegates;
 
 use crate::Error;
 use crate::deliver;
+use crate::deliver::basic::enums::Media;
 use crate::deliver::basic::enums::Status;
 use crate::preview;
 use crate::scene;
@@ -35,6 +36,14 @@ impl Capture {
     pub fn assert_centered(&self, tolerance: u32) -> Result<(), Error> {}
     pub fn send_one(&self, caption: &str) -> Result<bool, Error> {}
     pub fn send_group(items: &[&Capture], caption: &str) -> Result<usize, Error> {}
+    pub(crate) fn send_album(items: &[&Capture], caption: &str) -> Result<usize, Error> {}
+    pub(crate) fn write_markdown_section(out: &mut String, title: &str, captures: &[&Capture]) {}
+}
+
+#[rustfmt::skip]
+impl Capture {
+    pub(crate) const fn telegram_media_kind(&self) -> telegram_bot_helper::MediaKind { match self.artifact.media { Media::Png => telegram_bot_helper::MediaKind::Photo, Media::Mp4 => telegram_bot_helper::MediaKind::Video } }
+    pub(crate) fn is_mp4(&self) -> bool { self.path.extension().and_then(std::ffi::OsStr::to_str) == Some("mp4") }
 }
 
 #[cfg(test)]
@@ -64,5 +73,19 @@ mod tests {
         assert!(!capture(deliver::Status::Same).is_sendable());
         assert_eq!(capture(deliver::Status::Changed).status_word(), "changed");
         assert_ne!(Capture::changes_markdown(&[]), "");
+        let png = capture(deliver::Status::New);
+        assert!(!png.is_mp4());
+        assert_eq!(
+            png.telegram_media_kind(),
+            telegram_bot_helper::MediaKind::Photo
+        );
+        let mut clip = capture(deliver::Status::New);
+        clip.path = std::path::PathBuf::from("out/ui__clip.mp4");
+        clip.artifact.media = deliver::Media::Mp4;
+        assert!(clip.is_mp4());
+        assert_eq!(
+            clip.telegram_media_kind(),
+            telegram_bot_helper::MediaKind::Video
+        );
     }
 }

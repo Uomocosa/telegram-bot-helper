@@ -1,7 +1,4 @@
-use std::path::Path;
-
 use crate::Error;
-use crate::PreviewApp;
 use crate::deliver;
 use crate::preview;
 use crate::scene;
@@ -18,7 +15,7 @@ pub fn render_states(
             scene.name,
             deliver::Artifact::slug(&state.label)
         ));
-        let pixel_hash = render_one(scene, config, state, &out)?;
+        let pixel_hash = scene.render_state_in_fresh_app(config, state, &out)?;
         rendered.push(preview::RenderedState {
             path: out,
             label: state.label.clone(),
@@ -26,21 +23,6 @@ pub fn render_states(
         });
     }
     Ok(rendered)
-}
-
-// needed helper: every state needs its own App, because a spawn from state N must not leak into N+1
-fn render_one(
-    scene: &scene::Scene,
-    config: &preview::Config,
-    state: &scene::State,
-    out: &Path,
-) -> Result<String, Error> {
-    let mut app = PreviewApp::from_scene(scene, config);
-    app.warmup();
-    (state.apply)(app.app.world_mut());
-    app.app.update();
-    let frame = app.settled(out, config.max_capture_frames, config.min_distinct_colors)?;
-    Ok(deliver::Artifact::hash_bytes(frame.bytes()))
 }
 
 #[cfg(test)]

@@ -44,7 +44,6 @@ mod tests {
     use crate::scene;
     use std::path::PathBuf;
 
-    // needed helper: fixture shared by the tests in this file
     fn capture(label: &str, status: deliver::Status) -> deliver::Capture {
         deliver::Capture {
             path: PathBuf::from(format!("out/{label}.png")),

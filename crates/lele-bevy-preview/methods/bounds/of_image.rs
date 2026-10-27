@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::path::Path;
 
 use crate::Error;
@@ -11,7 +10,7 @@ pub fn of_image(path: &Path) -> Result<Option<layout::Bounds>, Error> {
             source,
         })?
         .to_rgba8();
-    let Some(background) = most_common(&image) else {
+    let Some(background) = layout::Bounds::background_colour(&image) else {
         return Ok(None);
     };
     let mut bounds: Option<layout::Bounds> = None;
@@ -36,19 +35,6 @@ pub fn of_image(path: &Path) -> Result<Option<layout::Bounds>, Error> {
         }));
     }
     Ok(bounds)
-}
-
-// needed helper: the background is the colour most pixels share, wherever the content sits
-fn most_common(image: &image::RgbaImage) -> Option<image::Rgba<u8>> {
-    let mut counts: HashMap<image::Rgba<u8>, usize> = HashMap::new();
-    for pixel in image.pixels() {
-        let count = counts.entry(*pixel).or_insert(0);
-        *count = count.saturating_add(1);
-    }
-    counts
-        .into_iter()
-        .max_by_key(|(_, count)| *count)
-        .map(|(pixel, _)| pixel)
 }
 
 #[cfg(test)]

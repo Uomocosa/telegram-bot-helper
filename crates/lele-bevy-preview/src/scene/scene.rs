@@ -48,6 +48,28 @@ impl Scene {
     }
     pub fn build_report(&self, config: &preview::Config) -> Result<Report, Error> {}
     pub fn run(&self, config: &preview::Config, crate_name: &str) -> Result<Report, Error> {}
+    pub(crate) fn check_timeline(&self) -> Result<(), Error> {}
+    pub(crate) fn render_state_in_fresh_app(
+        &self,
+        config: &preview::Config,
+        state: &scene::State,
+        out: &std::path::Path,
+    ) -> Result<String, Error> {
+    }
+    pub(crate) fn ffmpeg_encode(
+        frames: &[PathBuf],
+        fps: u32,
+        out: &std::path::Path,
+        scratch: &std::path::Path,
+    ) -> Result<PathBuf, Error> {
+    }
+    pub(crate) fn ffmpeg_binary() -> String {}
+    pub(crate) fn announce_artifacts(
+        captures: &[deliver::Capture],
+        clip: Option<&deliver::Capture>,
+    ) {
+    }
+    pub(crate) fn clip_hash(fps: u32, frame_hashes: &[String]) -> String {}
 }
 
 #[cfg(test)]
@@ -73,5 +95,8 @@ mod tests {
             ..preview::Config::default()
         };
         assert!(scene.scratch_dir(&config).ends_with("ui_frames"));
+        let frames = [String::from("a"), String::from("b")];
+        assert_eq!(Scene::clip_hash(10, &frames), Scene::clip_hash(10, &frames));
+        assert_ne!(Scene::clip_hash(10, &frames), Scene::clip_hash(12, &frames));
     }
 }

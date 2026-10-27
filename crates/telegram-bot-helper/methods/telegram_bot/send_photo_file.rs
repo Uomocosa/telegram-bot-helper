@@ -17,16 +17,10 @@ pub fn send_photo_file(bot: &TelegramBot, path: &Path, caption: &Caption) -> Res
             bytes: bytes.len(),
         });
     }
-    if !is_png(&bytes) {
+    if !TelegramBot::is_png(&bytes) {
         return Err(Error::NotPng { path: display });
     }
     bot.send_photo(&bytes, caption)
-}
-
-// needed helper: png magic check, so a non-png file names itself
-fn is_png(bytes: &[u8]) -> bool {
-    const MAGIC: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
-    bytes.len() >= MAGIC.len() && bytes.starts_with(&MAGIC)
 }
 
 #[cfg(test)]

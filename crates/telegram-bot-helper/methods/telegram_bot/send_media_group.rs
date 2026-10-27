@@ -3,14 +3,11 @@ use reqwest::blocking::multipart::{Form, Part};
 use crate::ApiResponse;
 use crate::Error;
 use crate::MediaGroup;
-use crate::MediaItem;
 use crate::MediaKind;
 use crate::TelegramBot;
 
 const MIN_ITEMS: usize = 2;
 const MAX_ITEMS: usize = 10;
-const MIN_BYTES: usize = 1024;
-const PNG_MAGIC: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
 
 pub fn send_media_group(bot: &TelegramBot, group: &MediaGroup) -> Result<Vec<String>, Error> {
     if !(MIN_ITEMS..=MAX_ITEMS).contains(&group.items.len()) {
@@ -21,7 +18,7 @@ pub fn send_media_group(bot: &TelegramBot, group: &MediaGroup) -> Result<Vec<Str
     let token = bot.token.as_str();
     let mut form = Form::new().text("chat_id", bot.chat_id.clone());
     for (index, item) in group.items.iter().enumerate() {
-        let bytes = read_item(item)?;
+        let bytes = TelegramBot::read_album_item(item)?;
         let (file_name, mime) = match item.kind {
             MediaKind::Photo => ("preview.png", "image/png"),
             MediaKind::Video => ("clip.mp4", "video/mp4"),
@@ -62,36 +59,6 @@ pub fn send_media_group(bot: &TelegramBot, group: &MediaGroup) -> Result<Vec<Str
         body,
     }
     .message_ids()
-}
-
-// needed helper: same size and magic checks as the single-file senders, so a bad file names itself
-fn read_item(item: &MediaItem) -> Result<Vec<u8>, Error> {
-    let display = item.path.display().to_string();
-    let bytes = std::fs::read(item.path).map_err(|source| Error::Read {
-        path: display.clone(),
-        source,
-    })?;
-    let kind = match item.kind {
-        MediaKind::Photo => "preview",
-        MediaKind::Video => "clip",
-    };
-    if bytes.len() < MIN_BYTES {
-        return Err(Error::TooSmall {
-            kind,
-            path: display,
-            bytes: bytes.len(),
-        });
-    }
-    match item.kind {
-        MediaKind::Photo if !bytes.starts_with(&PNG_MAGIC) => Err(Error::NotPng { path: display }),
-        MediaKind::Video if !has_ftyp(&bytes) => Err(Error::NotMp4 { path: display }),
-        _ => Ok(bytes),
-    }
-}
-
-// needed helper: mp4 check for the album path
-fn has_ftyp(bytes: &[u8]) -> bool {
-    bytes.windows(4).any(|window| window == b"ftyp")
 }
 
 #[cfg(test)]

@@ -1,22 +1,9 @@
-use std::io::Write as _;
-
 use crate::TestLog;
 
 pub fn line(test_log: &TestLog, message: &str) {
     let stamped = format!("{:?} {message}", std::time::SystemTime::now());
-    write_line(test_log, &stamped);
+    test_log.append_if_open(&stamped);
     eprintln!("{stamped}");
-}
-
-// needed helper: appends one stamped line when the log file is available
-fn write_line(log: &TestLog, stamped: &str) {
-    let mut slot = log
-        .file
-        .lock()
-        .unwrap_or_else(std::sync::PoisonError::into_inner);
-    if let Some(file) = slot.as_mut() {
-        let _ = writeln!(file, "{stamped}");
-    }
 }
 
 #[cfg(test)]

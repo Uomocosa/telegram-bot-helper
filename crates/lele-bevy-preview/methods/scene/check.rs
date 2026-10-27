@@ -1,6 +1,6 @@
 use crate::Error;
 use crate::scene;
-use crate::scene::basic::constants::{MAX_FPS, MAX_STATES, MAX_TIMELINE_FRAMES};
+use crate::scene::basic::constants::MAX_STATES;
 
 pub fn check(scene: &scene::Scene) -> Result<(), Error> {
     if scene.name.trim().is_empty() {
@@ -27,33 +27,7 @@ pub fn check(scene: &scene::Scene) -> Result<(), Error> {
             )));
         }
     }
-    check_timeline(scene)
-}
-
-// needed helper: timeline rules live apart so check stays one readable list of state rules
-fn check_timeline(scene: &scene::Scene) -> Result<(), Error> {
-    let Some(timeline) = scene.timeline.as_ref() else {
-        return Ok(());
-    };
-    if timeline.frames == 0 {
-        return Err(Error::Scene(format!(
-            "scene `{}` timeline `{}` declares zero frames",
-            scene.name, timeline.label
-        )));
-    }
-    if timeline.frames > MAX_TIMELINE_FRAMES {
-        return Err(Error::Scene(format!(
-            "scene `{}` timeline `{}` declares {} frames, over the cap of {MAX_TIMELINE_FRAMES}",
-            scene.name, timeline.label, timeline.frames
-        )));
-    }
-    if timeline.fps == 0 || timeline.fps > MAX_FPS {
-        return Err(Error::Scene(format!(
-            "scene `{}` timeline `{}` fps {} is outside 1..={MAX_FPS}",
-            scene.name, timeline.label, timeline.fps
-        )));
-    }
-    Ok(())
+    scene.check_timeline()
 }
 
 #[cfg(test)]
