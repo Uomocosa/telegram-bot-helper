@@ -316,8 +316,8 @@ dependencies = [
 
 [[package]]
 name = "atomic-delegate-macros"
-version = "0.0.7"
-source = "git+https://github.com/Uomocosa/lele-rust-linter?tag=v0.0.7#177341a077d08105c946e5121768f9fd57b213ec"
+version = "0.0.8"
+source = "git+https://github.com/Uomocosa/lele-rust-linter?tag=v0.0.8#4afd07e1d6cc84682efcf732abd78f6bfcd4a084"
 dependencies = [
  "lele-snake-case",
  "proc-macro2",
@@ -3307,7 +3307,7 @@ checksum = "20870f649af7073d53e38067b2a84312175d56ea15217e1b15bc83506ec50afb"
 
 [[package]]
 name = "lele-bevy-preview"
-version = "0.0.10"
+version = "0.0.11"
 dependencies = [
  "atomic-delegate-macros",
  "bevy",
@@ -3325,8 +3325,8 @@ dependencies = [
 
 [[package]]
 name = "lele-snake-case"
-version = "0.0.7"
-source = "git+https://github.com/Uomocosa/lele-rust-linter?tag=v0.0.7#177341a077d08105c946e5121768f9fd57b213ec"
+version = "0.0.8"
+source = "git+https://github.com/Uomocosa/lele-rust-linter?tag=v0.0.8#4afd07e1d6cc84682efcf732abd78f6bfcd4a084"
 
 [[package]]
 name = "libc"
@@ -5052,7 +5052,7 @@ dependencies = [
 
 [[package]]
 name = "telegram-bot-helper"
-version = "0.0.10"
+version = "0.0.11"
 dependencies = [
  "atomic-delegate-macros",
  "chrono",
@@ -5067,7 +5067,7 @@ dependencies = [
 
 [[package]]
 name = "telegram-bot-helper-macros"
-version = "0.0.10"
+version = "0.0.11"
 dependencies = [
  "proc-macro2",
  "quote",
