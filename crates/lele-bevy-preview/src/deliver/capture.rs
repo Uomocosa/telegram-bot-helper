@@ -35,6 +35,23 @@ impl Capture {
     pub fn send_one(&self, caption: &str) -> Result<bool, Error> {}
     pub fn send_group(items: &[&Capture], caption: &str) -> Result<usize, Error> {}
     pub(crate) fn send_album(items: &[&Capture], caption: &str) -> Result<usize, Error> {}
+    pub(crate) fn drop_staged_file(&self, staging_root: &std::path::Path, scene_name: &str) {}
+    pub(crate) fn stash_staged_to_unsent(
+        &mut self,
+        out_dir: &std::path::Path,
+        scene_name: &str,
+        staging_root: &std::path::Path,
+    ) -> Result<(), Error> {
+    }
+    pub(crate) fn promote_staged_to_delivered(
+        &mut self,
+        out_dir: &std::path::Path,
+        scene_name: &str,
+        staging_root: &std::path::Path,
+        resend_all: bool,
+    ) -> Result<(), Error> {
+    }
+    pub(crate) fn clear_unsent_entry(&self, out_dir: &std::path::Path, scene_name: &str) {}
 }
 
 #[rustfmt::skip]

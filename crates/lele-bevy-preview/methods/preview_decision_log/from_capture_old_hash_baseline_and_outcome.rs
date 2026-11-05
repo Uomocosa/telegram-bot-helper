@@ -1,10 +1,10 @@
 use crate::deliver;
 
 #[must_use]
-pub fn from_capture_old_hash_cache_and_outcome(
+pub fn from_capture_old_hash_baseline_and_outcome(
     capture: &deliver::Capture,
     old_hash: &str,
-    cache: &str,
+    baseline: &str,
     outcome: &str,
 ) -> deliver::PreviewDecisionLog {
     let time = deliver::PreviewDecisionLog::current_time();
@@ -20,7 +20,7 @@ pub fn from_capture_old_hash_cache_and_outcome(
         status: capture.status_word().to_string(),
         old_hash: old_hash.to_string(),
         new_hash: capture.artifact.pixel_hash.clone(),
-        cache: cache.to_string(),
+        baseline: baseline.to_string(),
         driver,
         outcome: outcome.to_string(),
     }
@@ -28,10 +28,10 @@ pub fn from_capture_old_hash_cache_and_outcome(
 
 #[cfg(test)]
 mod tests {
-    use super::from_capture_old_hash_cache_and_outcome;
+    use super::from_capture_old_hash_baseline_and_outcome;
 
     #[test]
     fn test_usage() {
-        let _ = from_capture_old_hash_cache_and_outcome;
+        let _ = from_capture_old_hash_baseline_and_outcome;
     }
 }

@@ -3,6 +3,7 @@ mod tests {
     use bevy::ecs::world::World;
     use bevy::prelude::App;
 
+    use crate::deliver;
     use crate::preview;
     use crate::scene;
     use crate::scene::Scene;
@@ -58,7 +59,10 @@ mod tests {
     fn test_usage() {
         let dir = tempfile::tempdir().unwrap();
         let clip = scene(Some(spec(3)))
-            .build_clip(&fast(dir.path()))
+            .build_clip(
+                &fast(dir.path()),
+                &deliver::Artifact::staging_root(dir.path(), "press"),
+            )
             .unwrap()
             .expect("a declared timeline must produce a clip");
         assert!(clip.path.exists(), "{} missing", clip.path.display());
@@ -69,7 +73,10 @@ mod tests {
     fn test_usage_renders_the_lead_in_then_one_png_per_declared_frame() {
         let dir = tempfile::tempdir().unwrap();
         let frames = scene(Some(spec(3)))
-            .render_frames(&fast(dir.path()))
+            .render_frames(
+                &fast(dir.path()),
+                &deliver::Artifact::staging_root(dir.path(), "press"),
+            )
             .unwrap();
         assert_eq!(frames.len(), 5, "2 lead-in frames plus the 3 declared ones");
         for frame in &frames {
@@ -81,17 +88,44 @@ mod tests {
     fn test_usage_a_scene_without_a_timeline_produces_no_frames() {
         let dir = tempfile::tempdir().unwrap();
         let config = fast(dir.path());
-        assert_eq!(scene(None).render_frames(&config).unwrap().len(), 0);
-        assert!(scene(None).build_clip(&config).unwrap().is_none());
+        assert_eq!(
+            scene(None)
+                .render_frames(
+                    &config,
+                    &deliver::Artifact::staging_root(dir.path(), "press")
+                )
+                .unwrap()
+                .len(),
+            0
+        );
+        assert!(
+            scene(None)
+                .build_clip(
+                    &config,
+                    &deliver::Artifact::staging_root(dir.path(), "press")
+                )
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[test]
     fn test_usage_two_runs_produce_identical_pixels() {
         let dir = tempfile::tempdir().unwrap();
         let config = fast(dir.path());
-        let one = scene(Some(spec(2))).render_frames(&config).unwrap();
+        let one = scene(Some(spec(2)))
+            .render_frames(
+                &config,
+                &deliver::Artifact::staging_root(dir.path(), "press"),
+            )
+            .unwrap();
         let first = std::fs::read(&one[1].path).unwrap();
-        let two = scene(Some(spec(2))).render_frames(&config).unwrap();
+        let two = scene(Some(spec(2)))
+            .render_frames(
+                &config,
+                &deliver::Artifact::staging_root(dir.path(), "press"),
+            )
+            .unwrap();
         let second = std::fs::read(&two[1].path).unwrap();
         assert_eq!(
             first, second,
@@ -103,7 +137,10 @@ mod tests {
     fn test_usage_a_missing_ffmpeg_binary_is_reported_not_ignored() {
         let dir = tempfile::tempdir().unwrap();
         unsafe { std::env::set_var("LELE_FFMPEG", "/nonexistent/ffmpeg-binary") };
-        let result = scene(Some(spec(2))).build_clip(&fast(dir.path()));
+        let result = scene(Some(spec(2))).build_clip(
+            &fast(dir.path()),
+            &deliver::Artifact::staging_root(dir.path(), "press"),
+        );
         unsafe { std::env::remove_var("LELE_FFMPEG") };
         assert!(matches!(result, Err(crate::Error::FfmpegSpawn { .. })));
     }
@@ -115,7 +152,10 @@ mod tests {
             apply: noop,
             ..spec(3)
         };
-        let result = scene(Some(flat)).build_clip(&fast(dir.path()));
+        let result = scene(Some(flat)).build_clip(
+            &fast(dir.path()),
+            &deliver::Artifact::staging_root(dir.path(), "press"),
+        );
         assert!(matches!(result, Err(crate::Error::StaticClip { .. })));
     }
 
@@ -123,7 +163,10 @@ mod tests {
     fn test_usage_the_baseline_precedes_the_change() {
         let dir = tempfile::tempdir().unwrap();
         let frames = scene(Some(spec(3)))
-            .render_frames(&fast(dir.path()))
+            .render_frames(
+                &fast(dir.path()),
+                &deliver::Artifact::staging_root(dir.path(), "press"),
+            )
             .unwrap();
         assert_eq!(
             frames[0].pixel_hash, frames[1].pixel_hash,

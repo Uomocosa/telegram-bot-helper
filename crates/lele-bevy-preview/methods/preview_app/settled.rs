@@ -53,7 +53,7 @@ pub fn settled(
         status: String::from("unknown"),
         old_hash: String::new(),
         new_hash: String::new(),
-        cache: String::from("missing"),
+        baseline: String::from("missing"),
         driver: deliver::PreviewDecisionLog::current_driver(),
         outcome: String::from("unsettled"),
     };

@@ -22,7 +22,7 @@ pub fn collect(
             media: Media::Png,
             kind,
         };
-        let status = artifact.status_in_cache(out_dir)?;
+        let status = artifact.status_against_baseline(out_dir)?;
         captures.push(deliver::Capture {
             path: state.path.clone(),
             artifact,

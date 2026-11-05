@@ -4,6 +4,7 @@ use atomic_delegate_macros::atomic_delegates;
 use serde::{Deserialize, Serialize};
 
 use crate::Error;
+use crate::basic;
 use crate::deliver;
 use crate::deliver::basic::enums::Media;
 use crate::scene;
@@ -30,8 +31,35 @@ impl Artifact {
     pub fn hash_bytes(bytes: &[u8]) -> String {}
     #[must_use]
     pub fn file_name(&self) -> String {}
-    pub fn hash_file(path: &Path) -> Result<String, Error> {}
-    pub fn status_in_cache(&self, out_dir: &Path) -> Result<deliver::Status, Error> {}
+    pub fn hash_png_pixels(path: &Path) -> Result<String, Error> {}
+    #[must_use]
+    pub fn staging_root(out_dir: &Path, scene: &str) -> std::path::PathBuf {}
+    pub fn acquire_scene_lock(out_dir: &Path, scene: &str) -> Result<std::fs::File, Error> {}
+    pub fn status_against_baseline(&self, out_dir: &Path) -> Result<deliver::Status, Error> {}
+    pub fn clip_status_against_baseline(
+        &self,
+        out_dir: &Path,
+        fps: u32,
+    ) -> Result<deliver::Status, Error> {
+    }
+}
+
+#[rustfmt::skip]
+impl Artifact {
+    #[must_use]
+    pub fn delivered_path(&self, out_dir: &Path) -> std::path::PathBuf { out_dir.join(self.file_name()) }
+    #[must_use]
+    pub fn unsent_path(&self, out_dir: &Path) -> std::path::PathBuf { out_dir.join(basic::constants::UNSENT_DIR).join(self.file_name()) }
+    #[must_use]
+    pub fn locks_dir(out_dir: &Path) -> std::path::PathBuf { out_dir.join(basic::constants::LOCKS_DIR) }
+    #[must_use]
+    pub fn lock_path(out_dir: &Path, scene: &str) -> std::path::PathBuf { Self::locks_dir(out_dir).join(format!("{scene}.lock")) }
+    #[must_use]
+    pub fn delivered_frames_dir(out_dir: &Path, scene: &str) -> std::path::PathBuf { out_dir.join(format!("{scene}_frames")) }
+    #[must_use]
+    pub fn staging_frames_dir(staging_root: &Path, scene: &str) -> std::path::PathBuf { staging_root.join(format!("{scene}_frames")) }
+    #[must_use]
+    pub fn unsent_frames_dir(out_dir: &Path, scene: &str) -> std::path::PathBuf { out_dir.join(basic::constants::UNSENT_DIR).join(format!("{scene}_frames")) }
 }
 
 #[cfg(test)]
@@ -59,7 +87,7 @@ mod tests {
         assert_eq!(artifact.file_name(), "ui__one_room.png");
         let dir = tempfile::tempdir().unwrap();
         assert_eq!(
-            artifact.status_in_cache(dir.path()).unwrap(),
+            artifact.status_against_baseline(dir.path()).unwrap(),
             deliver::Status::New
         );
         assert_eq!(artifact.fingerprint, "ui|one room");

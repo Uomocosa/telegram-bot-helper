@@ -7,11 +7,12 @@ use crate::scene;
 pub fn build_clip(
     scene: &scene::Scene,
     config: &preview::Config,
+    staging_root: &std::path::Path,
 ) -> Result<Option<deliver::Capture>, Error> {
     let Some(spec) = scene.timeline.as_ref() else {
         return Ok(None);
     };
-    let rendered = scene.render_frames(config)?;
+    let rendered = scene.render_frames(config, staging_root)?;
     let mut frames = Vec::with_capacity(rendered.len());
     let mut hashes = Vec::with_capacity(rendered.len());
     for frame in rendered {
@@ -24,12 +25,13 @@ pub fn build_clip(
             label: spec.label.clone(),
         });
     }
-    let out = config.out_dir.join(format!(
+    let out = staging_root.join(format!(
         "{}__{}.mp4",
         scene.name,
         deliver::Artifact::slug(&spec.label)
     ));
-    scene::Scene::ffmpeg_encode(&frames, spec.fps, &out, &scene.scratch_dir(config))?;
+    let staging_frames = deliver::Artifact::staging_frames_dir(staging_root, &scene.name);
+    scene::Scene::ffmpeg_encode(&frames, spec.fps, &out, &staging_frames)?;
     let artifact = deliver::Artifact {
         scene: scene.name.clone(),
         label: spec.label.clone(),
@@ -41,7 +43,7 @@ pub fn build_clip(
         media: Media::Mp4,
         kind: scene.kind,
     };
-    let status = artifact.status_in_cache(&config.out_dir)?;
+    let status = artifact.clip_status_against_baseline(&config.out_dir, spec.fps)?;
     Ok(Some(deliver::Capture {
         path: out,
         artifact,

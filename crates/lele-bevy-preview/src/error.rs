@@ -69,7 +69,11 @@ pub enum Error {
     #[error("telegram delivery failed")]
     Telegram(#[from] telegram_bot_helper::Error),
 
-    #[error("sent cache {} is invalid", path.display())]
-    SentCacheInvalid { path: std::path::PathBuf },
+    #[error("delivered preview {} is unreadable", path.display())]
+    DeliveredPreviewUnreadable {
+        path: std::path::PathBuf,
+        #[source]
+        source: std::io::Error,
+    },
 }
 // no test_usage necessary

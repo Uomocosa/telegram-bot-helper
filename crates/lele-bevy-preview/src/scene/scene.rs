@@ -27,26 +27,34 @@ impl Scene {
     pub fn render_states(
         &self,
         config: &preview::Config,
+        staging_root: &std::path::Path,
     ) -> Result<Vec<preview::RenderedState>, Error> {
     }
     pub fn render_frames(
         &self,
         config: &preview::Config,
+        staging_root: &std::path::Path,
     ) -> Result<Vec<timeline::RenderedFrame>, Error> {
     }
-    pub fn build_clip(&self, config: &preview::Config) -> Result<Option<deliver::Capture>, Error> {}
+    pub fn build_clip(
+        &self,
+        config: &preview::Config,
+        staging_root: &std::path::Path,
+    ) -> Result<Option<deliver::Capture>, Error> {
+    }
     pub fn build_report(&self, config: &preview::Config) -> Result<Report, Error> {}
     pub fn deliver_report(
         &self,
-        report: &Report,
+        report: &mut Report,
         config: &preview::Config,
     ) -> Result<usize, Error> {
     }
     pub fn run(&self, config: &preview::Config) -> Result<Report, Error> {}
     pub(crate) fn send_fresh_delivery_and_record(
         &self,
-        fresh: &deliver::FreshDelivery,
+        fresh: &mut deliver::FreshDelivery,
         config: &preview::Config,
+        staging_root: &std::path::Path,
     ) -> Result<usize, Error> {
     }
     pub(crate) fn check_timeline(&self) -> Result<(), Error> {}
@@ -71,6 +79,88 @@ impl Scene {
     ) {
     }
     pub(crate) fn clip_hash(fps: u32, frame_hashes: &[String]) -> String {}
+}
+
+#[rustfmt::skip]
+impl Scene {
+    pub(crate) fn stash_positions_to_unsent(
+        &self,
+        fresh: &mut deliver::FreshDelivery,
+        positions: &[(usize, bool)],
+        config: &preview::Config,
+        staging_root: &std::path::Path,
+    ) {
+        for (position, is_clip) in positions {
+            if *is_clip {
+                if let Some(clip) = fresh.clip.as_mut() {
+                    let _ = clip.stash_staged_to_unsent(
+                        &config.out_dir,
+                        &self.name,
+                        staging_root,
+                    );
+                }
+            } else if let Some(capture) = fresh.captures.get_mut(*position) {
+                let _ = capture.stash_staged_to_unsent(
+                    &config.out_dir,
+                    &self.name,
+                    staging_root,
+                );
+            }
+        }
+    }
+
+    pub(crate) fn settle_positions_sent(
+        &self,
+        fresh: &mut deliver::FreshDelivery,
+        positions: &[(usize, bool)],
+        config: &preview::Config,
+        staging_root: &std::path::Path,
+        resend_all: bool,
+    ) {
+        for (position, is_clip) in positions {
+            if *is_clip {
+                if let Some(clip) = fresh.clip.as_mut() {
+                    let _ = clip.promote_staged_to_delivered(
+                        &config.out_dir,
+                        &self.name,
+                        staging_root,
+                        resend_all,
+                    );
+                }
+            } else if let Some(capture) = fresh.captures.get_mut(*position) {
+                let _ = capture.promote_staged_to_delivered(
+                    &config.out_dir,
+                    &self.name,
+                    staging_root,
+                    resend_all,
+                );
+            }
+        }
+    }
+
+    pub(crate) fn drop_positions_staged(
+        &self,
+        fresh: &mut deliver::FreshDelivery,
+        positions: &[(usize, bool)],
+        config: &preview::Config,
+        staging_root: &std::path::Path,
+    ) {
+        for (position, is_clip) in positions {
+            if *is_clip {
+                if let Some(clip) = fresh.clip.as_mut() {
+                    clip.drop_staged_file(staging_root, &self.name);
+                    let delivered = clip.artifact.delivered_path(&config.out_dir);
+                    clip.path.clone_from(&delivered);
+                    clip.clear_unsent_entry(&config.out_dir, &self.name);
+                }
+            } else if let Some(capture) = fresh.captures.get_mut(*position) {
+                capture.drop_staged_file(staging_root, &self.name);
+                let delivered = capture.artifact.delivered_path(&config.out_dir);
+                capture.path.clone_from(&delivered);
+                capture.clear_unsent_entry(&config.out_dir, &self.name);
+            }
+        }
+    }
 }
 
 #[cfg(test)]

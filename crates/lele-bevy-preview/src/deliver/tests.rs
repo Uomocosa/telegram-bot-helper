@@ -5,6 +5,12 @@ mod tests {
     use crate::scene;
     use std::path::PathBuf;
 
+    fn solid_png(path: &std::path::Path, red: u8, green: u8, blue: u8) -> String {
+        let image = image::RgbaImage::from_pixel(8, 8, image::Rgba([red, green, blue, 255]));
+        image.save(path).unwrap();
+        deliver::Artifact::hash_png_pixels(path).unwrap()
+    }
+
     fn artifact(scene: &str, label: &str, pixels: &str) -> deliver::Artifact {
         deliver::Artifact {
             scene: scene.to_string(),
@@ -22,17 +28,6 @@ mod tests {
             artifact: artifact("ui", label, "hash"),
             status,
         }
-    }
-
-    fn write_preview(dir: &std::path::Path, artifact: &deliver::Artifact) -> PathBuf {
-        let path = dir.join(artifact.file_name());
-        std::fs::write(&path, b"bytes").unwrap();
-        path
-    }
-
-    fn record(dir: &std::path::Path, artifact: &deliver::Artifact) {
-        write_preview(dir, artifact);
-        deliver::SentPreviewHash::record(dir, artifact).unwrap();
     }
 
     #[test]
@@ -61,122 +56,125 @@ mod tests {
     }
 
     #[test]
-    fn test_usage_missing_sent_is_new() {
+    fn test_usage_missing_delivered_is_new() {
         let dir = tempfile::tempdir().unwrap();
-        let current = artifact("ui", "rest", "0123456789abcdef");
-        write_preview(dir.path(), &current);
+        let path = dir.path().join("ui__rest.png");
+        let hash = solid_png(&path, 10, 12, 16);
+        let current = artifact("ui", "rest", &hash);
+        std::fs::remove_file(&path).unwrap();
         assert_eq!(
-            current.status_in_cache(dir.path()).unwrap(),
+            current.status_against_baseline(dir.path()).unwrap(),
             deliver::Status::New
         );
     }
 
     #[test]
-    fn test_usage_missing_preview_file_is_new_even_with_sent() {
+    fn test_usage_missing_preview_file_is_new() {
         let dir = tempfile::tempdir().unwrap();
-        let old = artifact("ui", "rest", "0123456789abcdef");
-        record(dir.path(), &old);
-        std::fs::remove_file(dir.path().join(old.file_name())).unwrap();
         let current = artifact("ui", "rest", "0123456789abcdef");
         assert_eq!(
-            current.status_in_cache(dir.path()).unwrap(),
+            current.status_against_baseline(dir.path()).unwrap(),
             deliver::Status::New
         );
     }
 
     #[test]
-    fn test_usage_same_hash_is_same() {
+    fn test_usage_same_pixels_is_same() {
         let dir = tempfile::tempdir().unwrap();
-        let current = artifact("ui", "rest", "0123456789abcdef");
-        record(dir.path(), &current);
+        let path = dir.path().join("ui__rest.png");
+        let hash = solid_png(&path, 20, 30, 40);
+        let current = artifact("ui", "rest", &hash);
         assert_eq!(
-            current.status_in_cache(dir.path()).unwrap(),
+            current.status_against_baseline(dir.path()).unwrap(),
             deliver::Status::Same
         );
     }
 
     #[test]
-    fn test_usage_different_hash_is_changed() {
+    fn test_usage_different_pixels_is_changed() {
         let dir = tempfile::tempdir().unwrap();
-        let old = artifact("ui", "rest", "0000000000000000");
-        record(dir.path(), &old);
-        let current = artifact("ui", "rest", "1111111111111111");
-        write_preview(dir.path(), &current);
+        let path = dir.path().join("ui__rest.png");
+        solid_png(&path, 1, 2, 3);
+        let staged = dir.path().join("staged.png");
+        let staged_hash = solid_png(&staged, 4, 5, 6);
+        let current = artifact("ui", "rest", &staged_hash);
         assert_eq!(
-            current.status_in_cache(dir.path()).unwrap(),
+            current.status_against_baseline(dir.path()).unwrap(),
             deliver::Status::Changed
         );
     }
 
     #[test]
-    fn test_usage_invalid_sent_fails_and_leaves_file_untouched() {
+    fn test_usage_corrupt_delivered_fails_and_leaves_file_untouched() {
         let dir = tempfile::tempdir().unwrap();
         let current = artifact("ui", "rest", "0123456789abcdef");
-        write_preview(dir.path(), &current);
-        let sent = deliver::SentPreviewHash::sent_path(dir.path(), &current);
-        std::fs::create_dir_all(sent.parent().unwrap()).unwrap();
-        std::fs::write(&sent, b"not-a-hash").unwrap();
-        let before = std::fs::read(&sent).unwrap();
-        let result = current.status_in_cache(dir.path());
-        assert!(matches!(result, Err(crate::Error::SentCacheInvalid { .. })));
-        let after = std::fs::read(&sent).unwrap();
+        let path = dir.path().join(current.file_name());
+        std::fs::write(&path, b"not-a-png").unwrap();
+        let before = std::fs::read(&path).unwrap();
+        let result = current.status_against_baseline(dir.path());
+        assert!(result.is_err());
+        let after = std::fs::read(&path).unwrap();
         assert_eq!(before, after);
     }
 
     #[test]
     fn test_usage_collect_labels_every_artifact_with_a_status() {
         let dir = tempfile::tempdir().unwrap();
+        let staging = dir.path().join("staging").join("ui__rest.png");
+        std::fs::create_dir_all(staging.parent().unwrap()).unwrap();
+        let hash = solid_png(&staging, 7, 8, 9);
         let rendered = vec![preview::RenderedState {
-            path: dir.path().join("ui__rest.png"),
+            path: staging.clone(),
             label: String::from("rest"),
-            pixel_hash: String::from("0123456789abcdef"),
+            pixel_hash: hash,
         }];
-        std::fs::write(&rendered[0].path, b"bytes").unwrap();
         let captures =
             deliver::Capture::collect("ui", scene::Kind::System, &rendered, dir.path()).unwrap();
         assert_eq!(captures.len(), 1);
         assert_eq!(captures[0].status, deliver::Status::New);
         assert_eq!(captures[0].artifact.fingerprint, "ui|rest");
-        deliver::SentPreviewHash::record(dir.path(), &captures[0].artifact).unwrap();
+        let delivered = dir.path().join("ui__rest.png");
+        std::fs::copy(&staging, &delivered).unwrap();
         let again =
             deliver::Capture::collect("ui", scene::Kind::System, &rendered, dir.path()).unwrap();
         assert_eq!(again[0].status, deliver::Status::Same);
     }
 
     #[test]
-    fn test_usage_hash_file_reads_bytes_and_reports_missing_files() {
+    fn test_usage_hash_png_pixels_reads_decoded_pixels_and_reports_missing() {
         let dir = tempfile::tempdir().unwrap();
         let png = dir.path().join("bytes.png");
-        std::fs::write(&png, b"pixel-bytes").unwrap();
-        assert_eq!(
-            deliver::Artifact::hash_file(&png).unwrap(),
-            deliver::Artifact::hash_bytes(b"pixel-bytes")
-        );
-        assert!(deliver::Artifact::hash_file(&dir.path().join("absent.png")).is_err());
+        let hash = solid_png(&png, 11, 22, 33);
+        assert_eq!(deliver::Artifact::hash_png_pixels(&png).unwrap(), hash);
+        assert!(deliver::Artifact::hash_png_pixels(&dir.path().join("absent.png")).is_err());
     }
 
     #[test]
-    fn test_usage_sent_path_uses_file_name_in_cache() {
+    fn test_usage_paths_use_file_name_in_dirs() {
         let dir = tempfile::tempdir().unwrap();
         let current = artifact("lobby_ui", "one room", "0123456789abcdef");
-        let path = deliver::SentPreviewHash::sent_path(dir.path(), &current);
-        assert!(path.ends_with("lobby_ui__one_room.png.sent"));
-        assert!(
-            path.to_string_lossy()
-                .contains(deliver::basic::constants::CACHE_DIR)
-        );
+        let delivered = current.delivered_path(dir.path());
+        assert!(delivered.ends_with("lobby_ui__one_room.png"));
+        let unsent = current.unsent_path(dir.path());
+        assert!(unsent.to_string_lossy().contains("_unsent"));
+        assert!(unsent.ends_with("lobby_ui__one_room.png"));
+        let locks = deliver::Artifact::locks_dir(dir.path());
+        assert!(locks.ends_with("_locks"));
+        let staging = deliver::Artifact::staging_root(dir.path(), "lobby_ui");
+        assert!(staging.to_string_lossy().contains("_staging"));
     }
 
     #[test]
-    fn test_usage_record_writes_hash_with_newline_atomically() {
+    fn test_usage_delivered_and_unsent_frames_dirs() {
         let dir = tempfile::tempdir().unwrap();
-        let current = artifact("ui", "rest", "0123456789abcdef");
-        write_preview(dir.path(), &current);
-        deliver::SentPreviewHash::record(dir.path(), &current).unwrap();
-        let path = deliver::SentPreviewHash::sent_path(dir.path(), &current);
-        let text = std::fs::read_to_string(&path).unwrap();
-        assert_eq!(text, "0123456789abcdef\n");
-        assert_eq!(text.trim_end().len(), deliver::basic::constants::HASH_CHARS);
+        assert!(deliver::Artifact::delivered_frames_dir(dir.path(), "ui").ends_with("ui_frames"));
+        assert!(
+            deliver::Artifact::unsent_frames_dir(dir.path(), "ui")
+                .to_string_lossy()
+                .contains("_unsent")
+        );
+        let staging = deliver::Artifact::staging_root(dir.path(), "ui");
+        assert!(deliver::Artifact::staging_frames_dir(&staging, "ui").ends_with("ui_frames"));
     }
     // no test_usage necessary
 }

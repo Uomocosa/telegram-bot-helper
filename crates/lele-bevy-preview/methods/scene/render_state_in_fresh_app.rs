@@ -16,8 +16,8 @@ pub fn render_state_in_fresh_app(
     app.warmup();
     (state.apply)(app.app.world_mut());
     app.app.update();
-    let frame = app.settled(out, config.max_capture_frames, config.min_distinct_colors)?;
-    Ok(deliver::Artifact::hash_bytes(frame.bytes()))
+    let _frame = app.settled(out, config.max_capture_frames, config.min_distinct_colors)?;
+    deliver::Artifact::hash_png_pixels(out)
 }
 
 #[cfg(test)]

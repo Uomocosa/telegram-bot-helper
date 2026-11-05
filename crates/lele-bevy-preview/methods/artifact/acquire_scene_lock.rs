@@ -4,9 +4,9 @@ use crate::Error;
 use crate::deliver;
 
 pub fn acquire_scene_lock(out_dir: &Path, scene: &str) -> Result<std::fs::File, Error> {
-    let cache = deliver::SentPreviewHash::cache_dir(out_dir);
-    std::fs::create_dir_all(&cache).map_err(Error::Io)?;
-    let lock_path = cache.join(format!("{scene}.lock"));
+    let locks = deliver::Artifact::locks_dir(out_dir);
+    std::fs::create_dir_all(&locks).map_err(Error::Io)?;
+    let lock_path = deliver::Artifact::lock_path(out_dir, scene);
     let lock_file = std::fs::OpenOptions::new()
         .create(true)
         .write(true)

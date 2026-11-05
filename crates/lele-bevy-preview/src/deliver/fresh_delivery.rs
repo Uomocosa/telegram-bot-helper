@@ -11,14 +11,15 @@ pub struct FreshDelivery {
     pub captures: Vec<deliver::Capture>,
     pub clip: Option<deliver::Capture>,
     pub old_hashes: HashMap<String, String>,
-    pub cache_state: String,
+    pub baseline_state: String,
 }
 
 #[atomic_delegates]
 impl FreshDelivery {
-    pub(crate) fn try_from_report_and_cache(
+    pub(crate) fn try_from_report_and_baseline(
         report: &Report,
         out_dir: &std::path::Path,
+        fps: u32,
     ) -> Result<Self, Error> {
     }
     pub(crate) fn log_captures_with_outcome(
@@ -27,6 +28,38 @@ impl FreshDelivery {
         outcome: &str,
         out_dir: &std::path::Path,
     ) -> usize {
+    }
+    pub(crate) fn all_positions(&self) -> Vec<(usize, bool)> {}
+}
+
+#[rustfmt::skip]
+impl FreshDelivery {
+
+    pub(crate) fn chunk_refs<'a>(&'a self, chunk: &[(usize, bool)]) -> Vec<&'a deliver::Capture> {
+        chunk
+            .iter()
+            .filter_map(|(position, is_clip)| {
+                if *is_clip {
+                    self.clip.as_ref()
+                } else {
+                    self.captures.get(*position)
+                }
+            })
+            .collect()
+    }
+
+    pub(crate) fn chunk_is_sendable(&self, chunk: &[(usize, bool)]) -> bool {
+        chunk.iter().any(|(position, is_clip)| {
+            if *is_clip {
+                self.clip
+                    .as_ref()
+                    .is_some_and(deliver::Capture::is_sendable)
+            } else {
+                self.captures
+                    .get(*position)
+                    .is_some_and(deliver::Capture::is_sendable)
+            }
+        })
     }
 }
 
@@ -41,9 +74,9 @@ mod tests {
             captures: Vec::new(),
             clip: None,
             old_hashes: HashMap::new(),
-            cache_state: String::from("missing"),
+            baseline_state: String::from("missing"),
         };
         assert_eq!(fresh.captures.len(), 0);
-        assert!(fresh.cache_state.contains("missing"));
+        assert!(fresh.baseline_state.contains("missing"));
     }
 }

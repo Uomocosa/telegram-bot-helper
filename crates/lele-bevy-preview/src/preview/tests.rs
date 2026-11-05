@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::PreviewApp;
+    use crate::deliver;
     use crate::preview;
     use bevy::prelude::*;
 
@@ -93,7 +94,8 @@ mod tests {
     #[test]
     fn test_usage_render_states_writes_one_png_per_state_named_after_the_scene() {
         let dir = tempfile::tempdir().unwrap();
-        let rendered = scene().render_states(&fast(dir.path())).unwrap();
+        let staging = deliver::Artifact::staging_root(dir.path(), "demo");
+        let rendered = scene().render_states(&fast(dir.path()), &staging).unwrap();
         assert_eq!(rendered.len(), 2);
         for state in &rendered {
             assert!(state.path.exists(), "{} missing", state.path.display());
@@ -118,7 +120,8 @@ mod tests {
             states: Vec::new(),
             ..scene()
         };
-        assert!(broken.render_states(&fast(dir.path())).is_err());
+        let staging = deliver::Artifact::staging_root(dir.path(), "demo");
+        assert!(broken.render_states(&fast(dir.path()), &staging).is_err());
     }
 
     #[test]

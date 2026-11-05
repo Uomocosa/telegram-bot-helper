@@ -7,35 +7,63 @@ const ALBUM_LIMIT: usize = 10;
 
 pub fn send_fresh_delivery_and_record(
     scene: &scene::Scene,
-    fresh: &deliver::FreshDelivery,
+    fresh: &mut deliver::FreshDelivery,
     config: &preview::Config,
+    staging_root: &std::path::Path,
 ) -> Result<usize, Error> {
-    let mut all_refs: Vec<&deliver::Capture> = fresh.captures.iter().collect();
-    if let Some(clip) = fresh.clip.as_ref() {
-        all_refs.push(clip);
+    let mut order = Vec::with_capacity(
+        fresh
+            .captures
+            .len()
+            .saturating_add(usize::from(fresh.clip.is_some())),
+    );
+    for index in 0..fresh.captures.len() {
+        order.push((index, false));
     }
-    let caption = scene.kind.caption(&scene.name, &all_refs);
+    if fresh.clip.is_some() {
+        order.push((0, true));
+    }
+    let caption = {
+        let mut all_refs: Vec<&deliver::Capture> = fresh.captures.iter().collect();
+        if let Some(clip) = fresh.clip.as_ref() {
+            all_refs.push(clip);
+        }
+        scene.kind.caption(&scene.name, &all_refs)
+    };
     let mut total: usize = 0;
     let resend_all = deliver::Capture::is_resend_all_requested();
-    for chunk in all_refs.chunks(ALBUM_LIMIT) {
-        let chunk_sendable = resend_all || chunk.iter().any(|capture| capture.is_sendable());
-        if !chunk_sendable {
-            fresh.log_captures_with_outcome(chunk, "skipped_same", &config.out_dir);
+    let chunks: Vec<&[(usize, bool)]> = order.chunks(ALBUM_LIMIT).collect();
+    for (chunk_index, chunk) in chunks.iter().enumerate() {
+        if !resend_all && !fresh.chunk_is_sendable(chunk) {
+            scene.drop_positions_staged(fresh, chunk, config, staging_root);
+            let refs = fresh.chunk_refs(chunk);
+            fresh.log_captures_with_outcome(&refs, "skipped_same", &config.out_dir);
             continue;
         }
-        match (config.send_preview_group)(chunk, &caption) {
+        let refs = fresh.chunk_refs(chunk);
+        let send_result = (config.send_preview_group)(&refs, &caption);
+        drop(refs);
+        match send_result {
             Ok(0) => {
-                fresh.log_captures_with_outcome(chunk, "no_credentials", &config.out_dir);
+                scene.stash_positions_to_unsent(fresh, chunk, config, staging_root);
+                let pending = fresh.chunk_refs(chunk);
+                fresh.log_captures_with_outcome(&pending, "no_credentials", &config.out_dir);
             }
             Ok(sent) => {
                 total = total.saturating_add(sent);
-                for capture in chunk {
-                    deliver::SentPreviewHash::record(&config.out_dir, &capture.artifact)?;
-                }
-                fresh.log_captures_with_outcome(chunk, "sent", &config.out_dir);
+                scene.settle_positions_sent(fresh, chunk, config, staging_root, resend_all);
+                let updated = fresh.chunk_refs(chunk);
+                fresh.log_captures_with_outcome(&updated, "sent", &config.out_dir);
             }
             Err(error) => {
-                fresh.log_captures_with_outcome(chunk, "failed", &config.out_dir);
+                scene.stash_positions_to_unsent(fresh, chunk, config, staging_root);
+                let failed = fresh.chunk_refs(chunk);
+                fresh.log_captures_with_outcome(&failed, "failed", &config.out_dir);
+                for rest in chunks.iter().skip(chunk_index.saturating_add(1)) {
+                    scene.stash_positions_to_unsent(fresh, rest, config, staging_root);
+                    let rest_refs = fresh.chunk_refs(rest);
+                    fresh.log_captures_with_outcome(&rest_refs, "failed", &config.out_dir);
+                }
                 return Err(error);
             }
         }

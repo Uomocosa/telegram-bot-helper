@@ -37,6 +37,19 @@ impl Report {
     pub fn assert_centered(&self, tolerance: u32) -> Result<(), Error> {}
 }
 
+impl Report {
+    pub(crate) fn sync_paths_from_fresh(&mut self, fresh: &deliver::FreshDelivery) {
+        for (slot, capture) in self.captures.iter_mut().zip(fresh.captures.iter()) {
+            slot.path.clone_from(&capture.path);
+            slot.status = capture.status;
+        }
+        if let (Some(slot), Some(capture)) = (self.clip.as_mut(), fresh.clip.as_ref()) {
+            slot.path.clone_from(&capture.path);
+            slot.status = capture.status;
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::deliver;

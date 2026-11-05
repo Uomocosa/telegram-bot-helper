@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use bevy::prelude::*;
 use lele_bevy_preview::Report;
-use lele_bevy_preview::deliver;
+use lele_bevy_preview::deliver::Artifact;
 use lele_bevy_preview::deliver::basic::enums::Status;
 use lele_bevy_preview::preview::Config;
 use lele_bevy_preview::scene::Scene;
@@ -69,6 +69,10 @@ fn config(dir: &std::path::Path) -> Config {
         max_capture_frames: 240,
         ..Config::default()
     }
+}
+
+fn lelle_staging(dir: &std::path::Path) -> std::path::PathBuf {
+    Artifact::staging_root(dir, "card")
 }
 
 fn scene(states: Vec<State>) -> Scene {
@@ -177,7 +181,9 @@ fn a_changed_visual_is_reported_as_changed() {
     let first = scene(vec![rest()])
         .build_report(&config(dir.path()))
         .unwrap();
-    deliver::SentPreviewHash::record(dir.path(), &first.captures[0].artifact).unwrap();
+    let delivered = dir.path().join(first.captures[0].artifact.file_name());
+    std::fs::create_dir_all(delivered.parent().unwrap()).unwrap();
+    std::fs::copy(&first.captures[0].path, &delivered).unwrap();
     let tinted = scene(vec![State {
         label: String::from("rest"),
         apply: tint,
@@ -203,7 +209,9 @@ fn a_timeline_renders_its_lead_in_then_one_frame_per_declared_frame() {
             apply: grow,
         }),
     };
-    let frames = with_timeline.render_frames(&config(dir.path())).unwrap();
+    let frames = with_timeline
+        .render_frames(&config(dir.path()), &lelle_staging(dir.path()))
+        .unwrap();
     assert_eq!(frames.len(), 6, "2 lead-in frames plus the 4 declared ones");
     for frame in &frames {
         assert!(frame.path.exists(), "{} missing", frame.path.display());
@@ -225,7 +233,9 @@ fn frames_of_a_timeline_differ_as_the_value_grows() {
             apply: grow,
         }),
     };
-    let frames = with_timeline.render_frames(&config(dir.path())).unwrap();
+    let frames = with_timeline
+        .render_frames(&config(dir.path()), &lelle_staging(dir.path()))
+        .unwrap();
     let hashes: Vec<String> = frames
         .iter()
         .map(|frame| frame.pixel_hash.clone())
@@ -246,8 +256,12 @@ fn a_time_driven_scene_renders_identically_across_runs() {
         states: vec![rest()],
         timeline: None,
     };
-    let first = still().render_states(&config(dir.path())).unwrap();
-    let second = still().render_states(&config(dir.path())).unwrap();
+    let first = still()
+        .render_states(&config(dir.path()), &lelle_staging(dir.path()))
+        .unwrap();
+    let second = still()
+        .render_states(&config(dir.path()), &lelle_staging(dir.path()))
+        .unwrap();
     assert_eq!(
         second[0].pixel_hash, first[0].pixel_hash,
         "a clock-driven state must render the same every run"
@@ -265,8 +279,12 @@ fn a_time_driven_scene_renders_identically_across_runs() {
             apply: grow,
         }),
     };
-    let first = pulsing().render_frames(&config(dir.path())).unwrap();
-    let second = pulsing().render_frames(&config(dir.path())).unwrap();
+    let first = pulsing()
+        .render_frames(&config(dir.path()), &lelle_staging(dir.path()))
+        .unwrap();
+    let second = pulsing()
+        .render_frames(&config(dir.path()), &lelle_staging(dir.path()))
+        .unwrap();
     let hashes = |frames: &[lele_bevy_preview::timeline::RenderedFrame]| -> Vec<String> {
         frames
             .iter()
@@ -298,7 +316,9 @@ fn preview_time_driven_worker_renders_hashes() {
             apply: grow,
         }),
     };
-    let frames = pulsing.render_frames(&config(&dir)).unwrap();
+    let frames = pulsing
+        .render_frames(&config(&dir), &Artifact::staging_root(&dir, "pulse"))
+        .unwrap();
     let hashes: Vec<String> = frames
         .iter()
         .map(|frame| frame.pixel_hash.clone())
