@@ -14,7 +14,6 @@ bevy.workspace = true
 blake3.workspace = true
 derive_more.workspace = true
 image.workspace = true
-serde.workspace = true
 telegram-bot-helper.workspace = true
 thiserror.workspace = true
 tracing.workspace = true

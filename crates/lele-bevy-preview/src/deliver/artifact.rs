@@ -1,7 +1,6 @@
 use std::path::Path;
 
 use atomic_delegate_macros::atomic_delegates;
-use serde::{Deserialize, Serialize};
 
 use crate::Error;
 use crate::basic;
@@ -9,15 +8,13 @@ use crate::deliver;
 use crate::deliver::basic::enums::Media;
 use crate::scene;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Artifact {
     pub scene: String,
     pub label: String,
     pub fingerprint: String,
     pub pixel_hash: String,
-    #[serde(default)]
     pub media: Media,
-    #[serde(default)]
     pub kind: scene::Kind,
 }
 

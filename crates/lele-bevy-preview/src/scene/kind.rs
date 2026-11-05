@@ -1,9 +1,8 @@
 use atomic_delegate_macros::atomic_delegates;
-use serde::{Deserialize, Serialize};
 
 use crate::deliver;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Kind {
     #[default]
     System,
