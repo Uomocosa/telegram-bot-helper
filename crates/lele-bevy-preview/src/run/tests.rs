@@ -134,7 +134,7 @@ mod tests {
             states: Vec::new(),
             ..scene()
         };
-        let result = broken.run(&config(dir.path()), "demo");
+        let result = broken.run(&config(dir.path()));
         assert!(matches!(result, Err(Error::Scene(_))));
         assert!(
             !dir.path()
@@ -208,7 +208,7 @@ mod tests {
             clip: None,
         };
         let scene_obj = scene();
-        assert!(scene_obj.deliver_report(&report, &failing, "demo").is_err());
+        assert!(scene_obj.deliver_report(&report, &failing).is_err());
         let third = scene().build_report(&config(dir.path())).unwrap();
         assert_eq!(
             third.captures[0].status,
@@ -378,7 +378,7 @@ mod tests {
             timeline: None,
         };
         let cfg = config_with(dir.path(), recording_send);
-        let sent = scene_obj.deliver_report(&report, &cfg, "demo").unwrap();
+        let sent = scene_obj.deliver_report(&report, &cfg).unwrap();
         assert_eq!(sent, 0);
         let empty = recorded_calls()
             .lock()
@@ -489,7 +489,7 @@ mod tests {
             timeline: None,
         };
         let cfg = config_with(dir.path(), recording_send);
-        let sent = scene_obj.deliver_report(&report, &cfg, "demo").unwrap();
+        let sent = scene_obj.deliver_report(&report, &cfg).unwrap();
         assert_eq!(sent, 3);
         let entries = recorded_calls()
             .lock()
@@ -532,9 +532,9 @@ mod tests {
             timeline: None,
         };
         let failing = config_with(dir.path(), fail_on_single_chunk);
-        assert!(scene_obj.deliver_report(&report, &failing, "demo").is_err());
+        assert!(scene_obj.deliver_report(&report, &failing).is_err());
         let retry = config_with(dir.path(), recording_send);
-        let sent = scene_obj.deliver_report(&report, &retry, "demo").unwrap();
+        let sent = scene_obj.deliver_report(&report, &retry).unwrap();
         assert_eq!(sent, 1);
         let entries = recorded_calls()
             .lock()
@@ -573,7 +573,7 @@ mod tests {
             timeline: None,
         };
         let cfg = config_with(dir.path(), recording_send);
-        let result = scene_obj.deliver_report(&report, &cfg, "demo");
+        let result = scene_obj.deliver_report(&report, &cfg);
         assert!(matches!(result, Err(Error::SentCacheInvalid { .. })));
         assert!(recorded_calls().lock().unwrap().get(dir.path()).is_none());
         let after = std::fs::read(&sent_path).unwrap();
@@ -614,13 +614,9 @@ mod tests {
             timeline: None,
         };
         let cfg = config_with(dir.path(), recording_send);
-        let first_sent = scene_obj
-            .deliver_report(&first_report, &cfg, "demo")
-            .unwrap();
+        let first_sent = scene_obj.deliver_report(&first_report, &cfg).unwrap();
         assert_eq!(first_sent, 1);
-        let second_sent = scene_obj
-            .deliver_report(&second_report, &cfg, "demo")
-            .unwrap();
+        let second_sent = scene_obj.deliver_report(&second_report, &cfg).unwrap();
         assert_eq!(second_sent, 0);
     }
 
@@ -656,9 +652,7 @@ mod tests {
                             clip: None,
                         };
                         let cfg = config_with(&path, file_recording_send);
-                        scene_for(&name)
-                            .deliver_report(&report, &cfg, "demo")
-                            .unwrap();
+                        scene_for(&name).deliver_report(&report, &cfg).unwrap();
                     }
                 });
             }
@@ -712,9 +706,7 @@ mod tests {
                             clip: None,
                         };
                         let cfg = config_with(&path, file_recording_send);
-                        scene_for("shared")
-                            .deliver_report(&report, &cfg, "demo")
-                            .unwrap();
+                        scene_for("shared").deliver_report(&report, &cfg).unwrap();
                     }
                 });
             }
@@ -769,9 +761,9 @@ mod tests {
         };
         let scene_obj = scene_for("ui");
         let failing = config_with(dir.path(), fail_on_single_chunk);
-        assert!(scene_obj.deliver_report(&report, &failing, "demo").is_err());
+        assert!(scene_obj.deliver_report(&report, &failing).is_err());
         let retry = config_with(dir.path(), recording_send);
-        let sent = scene_obj.deliver_report(&report, &retry, "demo").unwrap();
+        let sent = scene_obj.deliver_report(&report, &retry).unwrap();
         assert_eq!(sent, 1);
         let entries = recorded_calls()
             .lock()
@@ -820,7 +812,7 @@ mod tests {
                 ..preview::Config::default()
             };
             scene_for(&scene_name)
-                .deliver_report(&report, &config, "demo")
+                .deliver_report(&report, &config)
                 .unwrap();
         }
     }
@@ -904,7 +896,7 @@ mod tests {
         let scene_obj = scene_for("ui");
         let cfg = config_with(dir.path(), recording_send);
         unsafe { std::env::set_var("LELE_PREVIEW_DRY_RUN", "1") };
-        let sent = scene_obj.deliver_report(&report, &cfg, "demo").unwrap();
+        let sent = scene_obj.deliver_report(&report, &cfg).unwrap();
         unsafe { std::env::remove_var("LELE_PREVIEW_DRY_RUN") };
         assert_eq!(sent, 0);
         let sent_path = deliver::SentPreviewHash::sent_path(dir.path(), &sent_probe);
@@ -945,7 +937,7 @@ mod tests {
         };
         let scene_obj = scene_for("ui");
         let cfg = config_with(dir.path(), recording_send);
-        scene_obj.deliver_report(&report, &cfg, "demo").unwrap();
+        scene_obj.deliver_report(&report, &cfg).unwrap();
         let log_text =
             std::fs::read_to_string(dir.path().join(deliver::basic::constants::LOG_FILE)).unwrap();
         assert!(
@@ -965,9 +957,7 @@ mod tests {
             captures: vec![second],
             clip: None,
         };
-        scene_obj
-            .deliver_report(&second_report, &cfg, "demo")
-            .unwrap();
+        scene_obj.deliver_report(&second_report, &cfg).unwrap();
         let log_again =
             std::fs::read_to_string(dir.path().join(deliver::basic::constants::LOG_FILE)).unwrap();
         assert!(log_again.contains("hit"));

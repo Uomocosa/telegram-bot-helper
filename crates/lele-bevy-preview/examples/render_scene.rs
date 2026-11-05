@@ -88,7 +88,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             || PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("ui_preview"),
             PathBuf::from,
         );
-    let report = scene().run(&config(out), "render_scene")?;
+    let report = scene().run(&config(out))?;
     println!("{report}");
     for capture in &report.captures {
         println!("{} {}", capture.artifact.label, capture.path.display());
@@ -113,9 +113,7 @@ mod tests {
             timeline: None,
             ..super::scene()
         };
-        let report = still
-            .run(&super::config(out()), "render_scene")
-            .expect("preview");
+        let report = still.run(&super::config(out())).expect("preview");
         report.assert_centered(2).expect("centred");
     }
 
@@ -125,9 +123,7 @@ mod tests {
             build: preview_build,
             ..super::scene()
         };
-        let report = pulsing
-            .run(&super::config(out()), "render_scene")
-            .expect("preview");
+        let report = pulsing.run(&super::config(out())).expect("preview");
         assert!(report.clip.is_some());
     }
 }

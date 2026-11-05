@@ -37,6 +37,10 @@ setup:
 check:
     prek run --all-files
 
+# List orphaned UI previews (pass `apply` to delete them).
+preview-clean *ARGS:
+    python3 -B scripts/preview_clean.py crates/lele-bevy-preview/ui_preview {{ ARGS }}
+
 # Print sent lines of the newest run from a preview log.
 preview-why log:
     python3 -c 'import json,sys; p=sys.argv[1]; ls=[l for l in open(p).read().splitlines() if l.strip()]; os=[]; [os.append((l,json.loads(l))) for l in ls]; r=os[-1][1].get("run") if os else None; [print(l) for l,o in os if o.get("run")==r and o.get("outcome")=="sent"]' "{{ log }}"

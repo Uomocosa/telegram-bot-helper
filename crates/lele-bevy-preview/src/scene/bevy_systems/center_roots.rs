@@ -107,13 +107,10 @@ mod tests {
             timeline: None,
         };
         let report = preview
-            .run(
-                &lele_bevy_preview::preview::Config {
-                    out_dir: out,
-                    ..Default::default()
-                },
-                env!("CARGO_PKG_NAME"),
-            )
+            .run(&lele_bevy_preview::preview::Config {
+                out_dir: out,
+                ..Default::default()
+            })
             .expect("preview");
         let [before, after] = report.captures.as_slice() else {
             panic!("expected two captures");

@@ -40,15 +40,13 @@ impl Scene {
         &self,
         report: &Report,
         config: &preview::Config,
-        crate_name: &str,
     ) -> Result<usize, Error> {
     }
-    pub fn run(&self, config: &preview::Config, crate_name: &str) -> Result<Report, Error> {}
+    pub fn run(&self, config: &preview::Config) -> Result<Report, Error> {}
     pub(crate) fn send_fresh_delivery_and_record(
         &self,
         fresh: &deliver::FreshDelivery,
         config: &preview::Config,
-        crate_name: &str,
     ) -> Result<usize, Error> {
     }
     pub(crate) fn check_timeline(&self) -> Result<(), Error> {}

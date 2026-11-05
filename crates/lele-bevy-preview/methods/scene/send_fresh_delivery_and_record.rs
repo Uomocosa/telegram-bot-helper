@@ -9,9 +9,7 @@ pub fn send_fresh_delivery_and_record(
     scene: &scene::Scene,
     fresh: &deliver::FreshDelivery,
     config: &preview::Config,
-    crate_name: &str,
 ) -> Result<usize, Error> {
-    let _ = crate_name;
     let mut all_refs: Vec<&deliver::Capture> = fresh.captures.iter().collect();
     if let Some(clip) = fresh.clip.as_ref() {
         all_refs.push(clip);

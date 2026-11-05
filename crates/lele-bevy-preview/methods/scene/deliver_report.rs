@@ -8,7 +8,6 @@ pub fn deliver_report(
     scene: &scene::Scene,
     report: &Report,
     config: &preview::Config,
-    crate_name: &str,
 ) -> Result<usize, Error> {
     let _held = deliver::SentPreviewHash::acquire_scene_lock(&config.out_dir, &scene.name)?;
     let fresh = match deliver::FreshDelivery::try_from_report_and_cache(report, &config.out_dir) {
@@ -40,7 +39,7 @@ pub fn deliver_report(
         let _ = fresh.log_captures_with_outcome(&all, "skipped_same", &config.out_dir);
         return Ok(0);
     }
-    scene.send_fresh_delivery_and_record(&fresh, config, crate_name)
+    scene.send_fresh_delivery_and_record(&fresh, config)
 }
 
 #[cfg(test)]

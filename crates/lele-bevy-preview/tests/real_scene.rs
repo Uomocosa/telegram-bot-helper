@@ -147,7 +147,7 @@ fn a_blank_scene_is_rejected_rather_than_writing_an_empty_png() {
         states: vec![rest()],
         timeline: None,
     };
-    let result = empty.run(&config(dir.path()), "real_scene");
+    let result = empty.run(&config(dir.path()));
     assert!(
         matches!(result, Err(lele_bevy_preview::Error::NoVisual { .. })),
         "a scene that renders only the clear colour must be rejected, not written as a blank png"
