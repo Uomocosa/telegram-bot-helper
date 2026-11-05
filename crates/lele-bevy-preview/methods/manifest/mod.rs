@@ -1,10 +1,16 @@
+mod acquire_exclusive_lock;
 mod file_name;
 mod keep_on_disk;
 mod load;
+mod previous_hash_for;
 mod update;
 mod write_all;
+mod write_merged_atomically;
+pub use acquire_exclusive_lock::acquire_exclusive_lock;
 pub use file_name::file_name;
 pub use keep_on_disk::keep_on_disk;
 pub use load::load;
+pub use previous_hash_for::previous_hash_for;
 pub use update::update;
 pub use write_all::write_all;
+pub use write_merged_atomically::write_merged_atomically;

@@ -7,7 +7,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         || std::env::temp_dir().join("lele-bevy-preview"),
         PathBuf::from,
     );
-    let Some(manifest) = deliver::Manifest::load(&dir) else {
+    let loaded = deliver::Manifest::load(&dir)?;
+    let Some(manifest) = loaded else {
         eprintln!("no manifest in {}", dir.display());
         return Ok(());
     };

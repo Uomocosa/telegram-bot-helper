@@ -68,5 +68,19 @@ pub enum Error {
 
     #[error("telegram delivery failed")]
     Telegram(#[from] telegram_bot_helper::Error),
+
+    #[error("preview manifest {} is unreadable", path.display())]
+    ManifestUnreadable {
+        path: std::path::PathBuf,
+        #[source]
+        source: std::io::Error,
+    },
+
+    #[error("preview manifest {} is corrupt", path.display())]
+    ManifestCorrupt {
+        path: std::path::PathBuf,
+        #[source]
+        source: serde_json::Error,
+    },
 }
 // no test_usage necessary

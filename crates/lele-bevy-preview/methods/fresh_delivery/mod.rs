@@ -1,0 +1,4 @@
+mod from_report_and_manifest;
+mod log_captures_with_outcome;
+pub use from_report_and_manifest::from_report_and_manifest;
+pub use log_captures_with_outcome::log_captures_with_outcome;

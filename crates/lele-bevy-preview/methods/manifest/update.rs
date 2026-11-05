@@ -3,7 +3,6 @@ use std::path::Path;
 
 use crate::Error;
 use crate::deliver;
-use crate::deliver::basic::constants;
 
 pub fn update(
     dir: &Path,
@@ -11,11 +10,13 @@ pub fn update(
     recorded: &[&deliver::Capture],
     pending: &[&deliver::Capture],
 ) -> Result<(), Error> {
+    let _held = deliver::Manifest::acquire_exclusive_lock(dir)?;
     let empty = deliver::Manifest {
         crate_name: crate_name.to_string(),
         artifacts: BTreeMap::new(),
     };
-    let mut merged = deliver::Manifest::load(dir).unwrap_or(empty);
+    let loaded = deliver::Manifest::load(dir)?;
+    let mut merged = loaded.unwrap_or(empty);
     merged.crate_name = crate_name.to_string();
     for capture in pending {
         merged.artifacts.remove(&capture.artifact.fingerprint);
@@ -26,9 +27,7 @@ pub fn update(
             capture.artifact.clone(),
         );
     }
-    let json = serde_json::to_string_pretty(&merged)?;
-    std::fs::create_dir_all(dir).map_err(Error::Io)?;
-    std::fs::write(dir.join(constants::MANIFEST_FILE), json).map_err(Error::Io)
+    deliver::Manifest::write_merged_atomically(dir, &merged)
 }
 
 #[cfg(test)]

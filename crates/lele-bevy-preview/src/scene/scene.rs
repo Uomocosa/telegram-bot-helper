@@ -24,12 +24,6 @@ impl Scene {
     #[must_use]
     pub fn scratch_dir(&self, config: &preview::Config) -> PathBuf {}
     pub fn check(&self) -> Result<(), Error> {}
-    pub fn send_changed(
-        &self,
-        captures: &[deliver::Capture],
-        clip: Option<&deliver::Capture>,
-    ) -> Result<usize, Error> {
-    }
     pub fn render_states(
         &self,
         config: &preview::Config,
@@ -47,7 +41,22 @@ impl Scene {
     ) -> Result<Option<deliver::Capture>, Error> {
     }
     pub fn build_report(&self, config: &preview::Config) -> Result<Report, Error> {}
+    pub fn deliver_report(
+        &self,
+        report: &Report,
+        config: &preview::Config,
+        crate_name: &str,
+    ) -> Result<usize, Error> {
+    }
     pub fn run(&self, config: &preview::Config, crate_name: &str) -> Result<Report, Error> {}
+    pub(crate) fn send_fresh_delivery_and_record(
+        &self,
+        fresh: &deliver::FreshDelivery,
+        filtered: Option<deliver::Manifest>,
+        config: &preview::Config,
+        crate_name: &str,
+    ) -> Result<usize, Error> {
+    }
     pub(crate) fn check_timeline(&self) -> Result<(), Error> {}
     pub(crate) fn render_state_in_fresh_app(
         &self,

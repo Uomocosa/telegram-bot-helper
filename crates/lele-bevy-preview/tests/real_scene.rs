@@ -279,3 +279,101 @@ fn a_time_driven_scene_renders_identically_across_runs() {
         "a clock-driven clip must render the same frames every run"
     );
 }
+
+#[test]
+#[ignore = "worker for process tests"]
+fn preview_time_driven_worker_renders_hashes() {
+    let out = std::env::var("PREVIEW_WORKER_OUT_DIR").unwrap();
+    let hash_file = std::env::var("PREVIEW_WORKER_HASH_FILE").unwrap();
+    let dir = std::path::PathBuf::from(out);
+    let pulsing = Scene {
+        name: String::from("pulse"),
+        kind: lele_bevy_preview::scene::Kind::System,
+        build: with_count_and_camera,
+        states: vec![rest()],
+        timeline: Some(Timeline {
+            label: String::from("count_up"),
+            frames: 4,
+            fps: 30,
+            apply: grow,
+        }),
+    };
+    let frames = pulsing.render_frames(&config(&dir)).unwrap();
+    let hashes: Vec<String> = frames
+        .iter()
+        .map(|frame| frame.pixel_hash.clone())
+        .collect();
+    std::fs::write(hash_file, hashes.join("\n")).unwrap();
+}
+
+fn run_time_driven_worker(
+    out_dir: &std::path::Path,
+    hash_file: &std::path::Path,
+) -> std::io::Result<()> {
+    let exe = std::env::current_exe()?;
+    let status = std::process::Command::new(exe)
+        .arg("preview_time_driven_worker_renders_hashes")
+        .arg("--exact")
+        .arg("--ignored")
+        .arg("--nocapture")
+        .env("PREVIEW_WORKER_OUT_DIR", out_dir)
+        .env("PREVIEW_WORKER_HASH_FILE", hash_file)
+        .env("TELEGRAM_BOT_TOKEN", "")
+        .env("TELEGRAM_CHAT_ID", "")
+        .status()?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(std::io::Error::other("worker failed"))
+    }
+}
+
+#[test]
+fn time_driven_scene_renders_identically_in_two_processes() {
+    let first_out = tempfile::tempdir().unwrap();
+    let second_out = tempfile::tempdir().unwrap();
+    let hashes_dir = tempfile::tempdir().unwrap();
+    let first_hash = hashes_dir.path().join("first.txt");
+    let second_hash = hashes_dir.path().join("second.txt");
+    run_time_driven_worker(first_out.path(), &first_hash).unwrap();
+    run_time_driven_worker(second_out.path(), &second_hash).unwrap();
+    let first = std::fs::read_to_string(first_hash).unwrap();
+    let second = std::fs::read_to_string(second_hash).unwrap();
+    assert_eq!(first, second);
+}
+
+#[test]
+fn time_driven_scene_renders_identically_under_parallel_load() {
+    let mut outputs = Vec::new();
+    let mut hash_files = Vec::new();
+    let hashes_dir = tempfile::tempdir().unwrap();
+    for index in 0..4 {
+        let out = tempfile::tempdir().unwrap();
+        let hash = hashes_dir.path().join(format!("{index}.txt"));
+        hash_files.push(hash);
+        outputs.push(out);
+    }
+    let exe = std::env::current_exe().unwrap();
+    let mut children = Vec::new();
+    for (out, hash) in outputs.iter().zip(hash_files.iter()) {
+        let child = std::process::Command::new(&exe)
+            .arg("preview_time_driven_worker_renders_hashes")
+            .arg("--exact")
+            .arg("--ignored")
+            .arg("--nocapture")
+            .env("PREVIEW_WORKER_OUT_DIR", out.path())
+            .env("PREVIEW_WORKER_HASH_FILE", hash)
+            .env("TELEGRAM_BOT_TOKEN", "")
+            .env("TELEGRAM_CHAT_ID", "")
+            .spawn()
+            .unwrap();
+        children.push(child);
+    }
+    for mut child in children {
+        assert!(child.wait().unwrap().success());
+    }
+    let first = std::fs::read_to_string(&hash_files[0]).unwrap();
+    for hash in hash_files.iter().skip(1) {
+        assert_eq!(std::fs::read_to_string(hash).unwrap(), first);
+    }
+}

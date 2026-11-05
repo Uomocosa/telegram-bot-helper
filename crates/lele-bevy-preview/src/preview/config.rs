@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use crate::Error;
+use crate::deliver;
 use crate::preview::basic::constants::{
     DEFAULT_HEIGHT, DEFAULT_LEAD_IN_FRAMES, DEFAULT_MAX_CAPTURE_FRAMES,
     DEFAULT_MIN_DISTINCT_COLORS, DEFAULT_WARMUP_FRAMES, DEFAULT_WIDTH,
@@ -14,6 +16,7 @@ pub struct Config {
     pub max_capture_frames: u32,
     pub min_distinct_colors: usize,
     pub out_dir: PathBuf,
+    pub send_preview_group: fn(&[&deliver::Capture], &str) -> Result<usize, Error>,
 }
 
 impl Default for Config {
@@ -26,6 +29,7 @@ impl Default for Config {
             max_capture_frames: DEFAULT_MAX_CAPTURE_FRAMES,
             min_distinct_colors: DEFAULT_MIN_DISTINCT_COLORS,
             out_dir: PathBuf::from("ui_preview"),
+            send_preview_group: deliver::Capture::send_group,
         }
     }
 }

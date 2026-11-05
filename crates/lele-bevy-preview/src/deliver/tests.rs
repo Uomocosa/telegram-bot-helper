@@ -113,10 +113,10 @@ mod tests {
     #[test]
     fn test_usage_manifest_round_trips_through_disk() {
         let dir = tempfile::tempdir().unwrap();
-        assert!(deliver::Manifest::load(dir.path()).is_none());
+        assert!(deliver::Manifest::load(dir.path()).unwrap().is_none());
         deliver::Manifest::write_all(dir.path(), "demo", &[capture("rest", deliver::Status::New)])
             .unwrap();
-        let loaded = deliver::Manifest::load(dir.path()).unwrap();
+        let loaded = deliver::Manifest::load(dir.path()).unwrap().unwrap();
         assert_eq!(loaded.crate_name, "demo");
         assert_eq!(loaded.artifacts.len(), 1);
         assert!(
@@ -143,7 +143,7 @@ mod tests {
             &[&capture("rest", deliver::Status::New)],
         )
         .unwrap();
-        let loaded = deliver::Manifest::load(dir.path()).unwrap();
+        let loaded = deliver::Manifest::load(dir.path()).unwrap().unwrap();
         assert_eq!(
             loaded.artifacts.len(),
             1,

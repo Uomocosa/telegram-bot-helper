@@ -17,8 +17,7 @@ pub struct Manifest {
 impl Manifest {
     #[must_use]
     pub fn file_name() -> String {}
-    #[must_use]
-    pub fn load(dir: &Path) -> Option<Manifest> {}
+    pub fn load(dir: &Path) -> Result<Option<Manifest>, Error> {}
     #[must_use]
     pub fn keep_on_disk(self, dir: &Path) -> Manifest {}
     pub fn update(
@@ -34,6 +33,10 @@ impl Manifest {
         captures: &[deliver::Capture],
     ) -> Result<(), Error> {
     }
+    pub(crate) fn write_merged_atomically(dir: &Path, manifest: &Manifest) -> Result<(), Error> {}
+    pub(crate) fn acquire_exclusive_lock(dir: &Path) -> Result<std::fs::File, Error> {}
+    #[must_use]
+    pub(crate) fn previous_hash_for(&self, artifact: &deliver::Artifact) -> String {}
 }
 
 #[cfg(test)]
@@ -68,7 +71,7 @@ mod tests {
                 .extension()
                 .is_some_and(|extension| extension.eq_ignore_ascii_case("json"))
         );
-        assert!(Manifest::load(dir.path()).is_none());
+        assert!(Manifest::load(dir.path()).unwrap().is_none());
         let kept = manifest().keep_on_disk(dir.path());
         assert!(kept.artifacts.is_empty());
     }
