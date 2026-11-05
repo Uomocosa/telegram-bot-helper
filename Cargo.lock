@@ -3316,7 +3316,6 @@ dependencies = [
  "image",
  "rstest",
  "serde",
- "serde_json",
  "telegram-bot-helper",
  "tempfile",
  "thiserror 2.0.21",

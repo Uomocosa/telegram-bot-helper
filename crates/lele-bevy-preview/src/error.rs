@@ -5,9 +5,6 @@ pub enum Error {
     #[error("preview file i/o failed")]
     Io(#[from] std::io::Error),
 
-    #[error("preview manifest could not be serialised")]
-    Json(#[from] serde_json::Error),
-
     #[error("cannot open image {}", path.display())]
     Image {
         path: std::path::PathBuf,
