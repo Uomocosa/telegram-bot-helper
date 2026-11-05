@@ -17,10 +17,6 @@ pub fn announce_artifacts(captures: &[deliver::Capture], clip: Option<&deliver::
             clip.artifact.label
         );
     }
-    println!(
-        "PREVIEW_MANIFEST={}",
-        deliver::basic::constants::MANIFEST_FILE
-    );
 }
 
 #[cfg(test)]

@@ -18,7 +18,7 @@ pub struct PreviewDecisionLog {
     pub status: String,
     pub old_hash: String,
     pub new_hash: String,
-    pub manifest: String,
+    pub cache: String,
     pub driver: String,
     pub outcome: String,
 }
@@ -26,10 +26,10 @@ pub struct PreviewDecisionLog {
 #[atomic_delegates]
 impl PreviewDecisionLog {
     #[must_use]
-    pub fn from_capture_old_hash_manifest_and_outcome(
+    pub fn from_capture_old_hash_cache_and_outcome(
         capture: &deliver::Capture,
         old_hash: &str,
-        manifest: &str,
+        cache: &str,
         outcome: &str,
     ) -> Self {
     }
@@ -73,7 +73,7 @@ mod tests {
             },
             status: deliver::Status::New,
         };
-        let entry = PreviewDecisionLog::from_capture_old_hash_manifest_and_outcome(
+        let entry = PreviewDecisionLog::from_capture_old_hash_cache_and_outcome(
             &capture, "", "missing", "sent",
         );
         assert_eq!(entry.test_scene, "ui");

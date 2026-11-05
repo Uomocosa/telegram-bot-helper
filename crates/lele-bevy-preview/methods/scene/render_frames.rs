@@ -47,7 +47,7 @@ pub fn render_frames(
             status: String::from("frame"),
             old_hash: String::new(),
             new_hash: pixel_hash.clone(),
-            manifest: String::from("frames"),
+            cache: String::from("frames"),
             driver: deliver::PreviewDecisionLog::current_driver(),
             outcome: String::from("frame"),
         };

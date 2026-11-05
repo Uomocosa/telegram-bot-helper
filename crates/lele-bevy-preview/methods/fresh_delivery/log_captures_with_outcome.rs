@@ -14,10 +14,10 @@ pub fn log_captures_with_outcome(
             .old_hashes
             .get(&capture.artifact.fingerprint)
             .map_or("", String::as_str);
-        let entry = deliver::PreviewDecisionLog::from_capture_old_hash_manifest_and_outcome(
+        let entry = deliver::PreviewDecisionLog::from_capture_old_hash_cache_and_outcome(
             capture,
             old,
-            &fresh.manifest_state,
+            &fresh.cache_state,
             outcome,
         );
         if entry.append(out_dir).is_ok() {

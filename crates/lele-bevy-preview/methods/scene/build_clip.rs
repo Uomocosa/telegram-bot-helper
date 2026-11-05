@@ -7,7 +7,6 @@ use crate::scene;
 pub fn build_clip(
     scene: &scene::Scene,
     config: &preview::Config,
-    previous: Option<&deliver::Manifest>,
 ) -> Result<Option<deliver::Capture>, Error> {
     let Some(spec) = scene.timeline.as_ref() else {
         return Ok(None);
@@ -42,7 +41,7 @@ pub fn build_clip(
         media: Media::Mp4,
         kind: scene.kind,
     };
-    let status = artifact.status_in(previous);
+    let status = artifact.status_in_cache(&config.out_dir)?;
     Ok(Some(deliver::Capture {
         path: out,
         artifact,

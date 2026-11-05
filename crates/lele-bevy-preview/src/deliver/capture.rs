@@ -28,16 +28,13 @@ impl Capture {
         scene: &str,
         kind: scene::Kind,
         rendered: &[preview::RenderedState],
-        previous: Option<&deliver::Manifest>,
+        out_dir: &std::path::Path,
     ) -> Result<Vec<Capture>, Error> {
     }
-    #[must_use]
-    pub fn changes_markdown(captures: &[Capture]) -> String {}
     pub fn assert_centered(&self, tolerance: u32) -> Result<(), Error> {}
     pub fn send_one(&self, caption: &str) -> Result<bool, Error> {}
     pub fn send_group(items: &[&Capture], caption: &str) -> Result<usize, Error> {}
     pub(crate) fn send_album(items: &[&Capture], caption: &str) -> Result<usize, Error> {}
-    pub(crate) fn write_markdown_section(out: &mut String, title: &str, captures: &[&Capture]) {}
 }
 
 #[rustfmt::skip]
@@ -72,7 +69,6 @@ mod tests {
         assert!(capture(deliver::Status::New).is_sendable());
         assert!(!capture(deliver::Status::Same).is_sendable());
         assert_eq!(capture(deliver::Status::Changed).status_word(), "changed");
-        assert_ne!(Capture::changes_markdown(&[]), "");
         let png = capture(deliver::Status::New);
         assert!(!png.is_mp4());
         assert_eq!(

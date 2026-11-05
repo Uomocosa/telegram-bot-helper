@@ -53,7 +53,7 @@ pub fn settled(
         status: String::from("unknown"),
         old_hash: String::new(),
         new_hash: String::new(),
-        manifest: String::from("missing"),
+        cache: String::from("missing"),
         driver: deliver::PreviewDecisionLog::current_driver(),
         outcome: String::from("unsettled"),
     };

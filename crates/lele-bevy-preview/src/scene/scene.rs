@@ -34,12 +34,7 @@ impl Scene {
         config: &preview::Config,
     ) -> Result<Vec<timeline::RenderedFrame>, Error> {
     }
-    pub fn build_clip(
-        &self,
-        config: &preview::Config,
-        previous: Option<&deliver::Manifest>,
-    ) -> Result<Option<deliver::Capture>, Error> {
-    }
+    pub fn build_clip(&self, config: &preview::Config) -> Result<Option<deliver::Capture>, Error> {}
     pub fn build_report(&self, config: &preview::Config) -> Result<Report, Error> {}
     pub fn deliver_report(
         &self,
@@ -52,7 +47,6 @@ impl Scene {
     pub(crate) fn send_fresh_delivery_and_record(
         &self,
         fresh: &deliver::FreshDelivery,
-        filtered: Option<deliver::Manifest>,
         config: &preview::Config,
         crate_name: &str,
     ) -> Result<usize, Error> {

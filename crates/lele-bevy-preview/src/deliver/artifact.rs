@@ -31,8 +31,7 @@ impl Artifact {
     #[must_use]
     pub fn file_name(&self) -> String {}
     pub fn hash_file(path: &Path) -> Result<String, Error> {}
-    #[must_use]
-    pub fn status_in(&self, previous: Option<&deliver::Manifest>) -> deliver::Status {}
+    pub fn status_in_cache(&self, out_dir: &Path) -> Result<deliver::Status, Error> {}
 }
 
 #[cfg(test)]
@@ -58,7 +57,11 @@ mod tests {
         let artifact = artifact("one room", "h1");
         assert_eq!(Artifact::slug("one room"), "one_room");
         assert_eq!(artifact.file_name(), "ui__one_room.png");
-        assert_eq!(artifact.status_in(None), deliver::Status::New);
+        let dir = tempfile::tempdir().unwrap();
+        assert_eq!(
+            artifact.status_in_cache(dir.path()).unwrap(),
+            deliver::Status::New
+        );
         assert_eq!(artifact.fingerprint, "ui|one room");
         assert_ne!(Artifact::hash_bytes(b"bytes"), "");
     }

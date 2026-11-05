@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use lele_bevy_preview::deliver;
 
@@ -7,36 +7,50 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         || std::env::temp_dir().join("lele-bevy-preview"),
         PathBuf::from,
     );
-    let loaded = deliver::Manifest::load(&dir)?;
-    let Some(manifest) = loaded else {
-        eprintln!("no manifest in {}", dir.display());
+    let mut previews: Vec<PathBuf> = std::fs::read_dir(&dir)?
+        .filter_map(Result::ok)
+        .map(|entry| entry.path())
+        .filter(|path| {
+            path.extension().is_some_and(|extension| {
+                extension.eq_ignore_ascii_case("png") || extension.eq_ignore_ascii_case("mp4")
+            })
+        })
+        .collect();
+    previews.sort();
+    if previews.is_empty() {
+        eprintln!("no previews in {}", dir.display());
         return Ok(());
-    };
+    }
     let mut sent = 0usize;
-    for artifact in manifest.artifacts.values() {
+    for path in previews {
+        let label = path.file_name().map_or_else(
+            || String::from("artifact"),
+            |name| name.to_string_lossy().to_string(),
+        );
+        let media = if path
+            .extension()
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("mp4"))
+        {
+            deliver::Media::Mp4
+        } else {
+            deliver::Media::Png
+        };
         let capture = deliver::Capture {
-            path: artifact_path(&dir, artifact),
-            artifact: artifact.clone(),
+            path: path.clone(),
+            artifact: deliver::Artifact {
+                scene: String::from("manual"),
+                label: label.clone(),
+                fingerprint: deliver::Artifact::fingerprint_of("manual", &label),
+                pixel_hash: String::new(),
+                media,
+                kind: lele_bevy_preview::scene::Kind::System,
+            },
             status: deliver::Status::New,
         };
-        if capture.path.exists() && capture.send_one(&artifact.label)? {
+        if capture.send_one(&label)? {
             sent = sent.saturating_add(1);
         }
     }
     println!("sent {sent} artifact(s) from {}", dir.display());
     Ok(())
-}
-
-// needed helper: manifest stores metadata, not paths; rebuild the name `run` writes
-fn artifact_path(dir: &Path, artifact: &deliver::Artifact) -> PathBuf {
-    let ext = match artifact.media {
-        deliver::Media::Png => "png",
-        deliver::Media::Mp4 => "mp4",
-    };
-    dir.join(format!(
-        "{}__{}.{}",
-        artifact.scene,
-        deliver::Artifact::slug(&artifact.label),
-        ext
-    ))
 }

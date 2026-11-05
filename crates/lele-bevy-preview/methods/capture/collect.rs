@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use crate::Error;
 use crate::deliver;
 use crate::deliver::basic::enums::Media;
@@ -8,7 +10,7 @@ pub fn collect(
     scene: &str,
     kind: scene::Kind,
     rendered: &[preview::RenderedState],
-    previous: Option<&deliver::Manifest>,
+    out_dir: &Path,
 ) -> Result<Vec<deliver::Capture>, Error> {
     let mut captures = Vec::new();
     for state in rendered {
@@ -20,7 +22,7 @@ pub fn collect(
             media: Media::Png,
             kind,
         };
-        let status = artifact.status_in(previous);
+        let status = artifact.status_in_cache(out_dir)?;
         captures.push(deliver::Capture {
             path: state.path.clone(),
             artifact,

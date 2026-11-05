@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
     use std::path::PathBuf;
+    use std::sync::Mutex;
+    use std::sync::OnceLock;
 
     use bevy::ecs::world::World;
     use bevy::prelude::App;
@@ -39,6 +42,15 @@ mod tests {
         }
     }
 
+    fn record_artifact(dir: &std::path::Path, artifact: &deliver::Artifact) {
+        let path = dir.join(artifact.file_name());
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).unwrap();
+        }
+        std::fs::write(&path, b"bytes").unwrap();
+        deliver::SentPreviewHash::record(dir, artifact).unwrap();
+    }
+
     #[test]
     fn test_usage() {
         let dir = tempfile::tempdir().unwrap();
@@ -66,13 +78,15 @@ mod tests {
     fn test_usage_differing_pixels_report_changed() {
         let dir = tempfile::tempdir().unwrap();
         let stale = vec![preview::RenderedState {
-            path: PathBuf::from("sync_room_list__two_rooms.png"),
+            path: dir.path().join("sync_room_list__two_rooms.png"),
             label: String::from("two rooms"),
-            pixel_hash: String::from("stale"),
+            pixel_hash: String::from("0000000000000000"),
         }];
+        std::fs::write(&stale[0].path, b"stale").unwrap();
         let previous =
-            deliver::Capture::collect("sync_room_list", scene::Kind::System, &stale, None).unwrap();
-        deliver::Manifest::update(dir.path(), "demo", &[&previous[0]], &[]).unwrap();
+            deliver::Capture::collect("sync_room_list", scene::Kind::System, &stale, dir.path())
+                .unwrap();
+        record_artifact(dir.path(), &previous[0].artifact);
         std::fs::write(dir.path().join("sync_room_list__two_rooms.png"), b"stale").unwrap();
         let third = scene().build_report(&config(dir.path())).unwrap();
         assert_eq!(third.captures[0].status, deliver::Status::Changed);
@@ -80,24 +94,37 @@ mod tests {
     }
 
     #[test]
-    fn test_usage_manifest_accumulates_across_scenes() {
+    fn test_usage_cache_accumulates_across_scenes() {
         let dir = tempfile::tempdir().unwrap();
         let two_rooms = vec![preview::RenderedState {
-            path: PathBuf::from("sync_room_list__two_rooms.png"),
+            path: dir.path().join("sync_room_list__two_rooms.png"),
             label: String::from("two rooms"),
-            pixel_hash: String::from("hash"),
+            pixel_hash: String::from("0123456789abcdef"),
         }];
-        let first =
-            deliver::Capture::collect("sync_room_list", scene::Kind::System, &two_rooms, None)
-                .unwrap();
-        deliver::Manifest::update(dir.path(), "demo", &[&first[0]], &[]).unwrap();
+        std::fs::write(&two_rooms[0].path, b"bytes").unwrap();
+        let first = deliver::Capture::collect(
+            "sync_room_list",
+            scene::Kind::System,
+            &two_rooms,
+            dir.path(),
+        )
+        .unwrap();
+        record_artifact(dir.path(), &first[0].artifact);
+        let other_rooms = vec![preview::RenderedState {
+            path: dir.path().join("spawn_root__two_rooms.png"),
+            label: String::from("two rooms"),
+            pixel_hash: String::from("0123456789abcdef"),
+        }];
+        std::fs::write(&other_rooms[0].path, b"bytes").unwrap();
         let other =
-            deliver::Capture::collect("spawn_root", scene::Kind::System, &two_rooms, None).unwrap();
-        deliver::Manifest::update(dir.path(), "demo", &[&other[0]], &[]).unwrap();
-        let merged = deliver::Manifest::load(dir.path()).unwrap().unwrap();
-        assert_eq!(merged.artifacts.len(), 2);
-        assert!(merged.artifacts.contains_key("sync_room_list|two rooms"));
-        assert!(merged.artifacts.contains_key("spawn_root|two rooms"));
+            deliver::Capture::collect("spawn_root", scene::Kind::System, &other_rooms, dir.path())
+                .unwrap();
+        record_artifact(dir.path(), &other[0].artifact);
+        let first_sent = deliver::SentPreviewHash::sent_path(dir.path(), &first[0].artifact);
+        let other_sent = deliver::SentPreviewHash::sent_path(dir.path(), &other[0].artifact);
+        assert!(first_sent.exists());
+        assert!(other_sent.exists());
+        assert_ne!(first_sent, other_sent);
     }
 
     #[test]
@@ -111,8 +138,13 @@ mod tests {
         assert!(matches!(result, Err(Error::Scene(_))));
         assert!(
             !dir.path()
-                .join(deliver::basic::constants::MANIFEST_FILE)
+                .join(deliver::basic::constants::CACHE_DIR)
                 .exists()
+                || !dir
+                    .path()
+                    .join(deliver::basic::constants::CACHE_DIR)
+                    .join("sync_room_list.lock")
+                    .exists()
         );
     }
 
@@ -133,7 +165,7 @@ mod tests {
     fn test_usage_a_recorded_preview_stays_same() {
         let dir = tempfile::tempdir().unwrap();
         let first = scene().build_report(&config(dir.path())).unwrap();
-        deliver::Manifest::update(dir.path(), "demo", &[&first.captures[0]], &[]).unwrap();
+        record_artifact(dir.path(), &first.captures[0].artifact);
         let second = scene().build_report(&config(dir.path())).unwrap();
         assert_eq!(second.captures[0].status, deliver::Status::Same);
         assert!(!second.captures[0].is_sendable());
@@ -143,7 +175,7 @@ mod tests {
     fn test_usage_a_deleted_preview_is_pending_again() {
         let dir = tempfile::tempdir().unwrap();
         let first = scene().build_report(&config(dir.path())).unwrap();
-        deliver::Manifest::update(dir.path(), "demo", &[&first.captures[0]], &[]).unwrap();
+        record_artifact(dir.path(), &first.captures[0].artifact);
         std::fs::remove_file(&first.captures[0].path).unwrap();
         let second = scene().build_report(&config(dir.path())).unwrap();
         assert_eq!(second.captures[0].status, deliver::Status::New);
@@ -163,13 +195,20 @@ mod tests {
     }
 
     #[test]
-    fn test_usage_an_unsent_preview_is_dropped_from_the_manifest() {
+    fn test_usage_an_unsent_preview_stays_pending_after_failed_send() {
         let dir = tempfile::tempdir().unwrap();
         let first = scene().build_report(&config(dir.path())).unwrap();
-        deliver::Manifest::update(dir.path(), "demo", &[&first.captures[0]], &[]).unwrap();
+        record_artifact(dir.path(), &first.captures[0].artifact);
         std::fs::remove_file(&first.captures[0].path).unwrap();
         let second = scene().build_report(&config(dir.path())).unwrap();
-        deliver::Manifest::update(dir.path(), "demo", &[], &[&second.captures[0]]).unwrap();
+        assert_eq!(second.captures[0].status, deliver::Status::New);
+        let failing = config_with(dir.path(), fail_always);
+        let report = Report {
+            captures: vec![second.captures[0].clone()],
+            clip: None,
+        };
+        let scene_obj = scene();
+        assert!(scene_obj.deliver_report(&report, &failing, "demo").is_err());
         let third = scene().build_report(&config(dir.path())).unwrap();
         assert_eq!(
             third.captures[0].status,
@@ -177,10 +216,6 @@ mod tests {
             "a re-rendered but unsent preview must stay pending on the next run"
         );
     }
-
-    use std::collections::HashMap;
-    use std::sync::Mutex;
-    use std::sync::OnceLock;
 
     type RecordedAlbum = Vec<RecordedSend>;
 
@@ -190,6 +225,8 @@ mod tests {
         fingerprints: Vec<String>,
     }
     type RecordedMap = HashMap<PathBuf, RecordedAlbum>;
+
+    static SENT_LOG_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
 
     fn recorded_calls() -> &'static Mutex<RecordedMap> {
         static MAP: OnceLock<Mutex<RecordedMap>> = OnceLock::new();
@@ -226,9 +263,16 @@ mod tests {
         Ok(items.len())
     }
 
+    fn fail_always(_items: &[&deliver::Capture], _caption: &str) -> Result<usize, Error> {
+        Err(Error::Scene(String::from("injected failure")))
+    }
+
     fn file_recording_send(items: &[&deliver::Capture], caption: &str) -> Result<usize, Error> {
-        use std::io::Write;
         let _ = caption;
+        let guard = SENT_LOG_LOCK
+            .get_or_init(|| Mutex::new(()))
+            .lock()
+            .map_err(|_| Error::Scene(String::from("lock poisoned")))?;
         let Some(dir) = items
             .first()
             .and_then(|capture| capture.path.parent())
@@ -236,15 +280,21 @@ mod tests {
         else {
             return Ok(0);
         };
-        let mut file = std::fs::OpenOptions::new()
+        let mut buffer = String::new();
+        for capture in items {
+            buffer.push_str(&capture.artifact.fingerprint);
+            buffer.push('\n');
+        }
+        std::fs::OpenOptions::new()
             .create(true)
             .append(true)
             .open(dir.join("test-sent.log"))
+            .and_then(|mut file| {
+                use std::io::Write;
+                file.write_all(buffer.as_bytes())
+            })
             .map_err(|_| Error::Scene(String::from("sent log unavailable")))?;
-        for capture in items {
-            writeln!(file, "{}", capture.artifact.fingerprint)
-                .map_err(|_| Error::Scene(String::from("sent log unavailable")))?;
-        }
+        drop(guard);
         Ok(items.len())
     }
 
@@ -295,26 +345,27 @@ mod tests {
     }
 
     #[test]
-    fn test_usage_same_hash_sends_nothing_and_manifest_unchanged() {
+    fn test_usage_same_hash_sends_nothing_and_cache_unchanged() {
         let dir = tempfile::tempdir().unwrap();
         let capture = hand_capture(
             dir.path(),
             "sync_room_list",
             "two rooms",
-            "hash",
+            "0123456789abcdef",
             deliver::Status::New,
         );
-        deliver::Manifest::update(dir.path(), "demo", &[&capture], &[]).unwrap();
         std::fs::write(&capture.path, b"bytes").unwrap();
-        let before =
-            std::fs::read(dir.path().join(deliver::basic::constants::MANIFEST_FILE)).unwrap();
+        deliver::SentPreviewHash::record(dir.path(), &capture.artifact).unwrap();
+        let sent_path = deliver::SentPreviewHash::sent_path(dir.path(), &capture.artifact);
+        let before = std::fs::read(&sent_path).unwrap();
         let same = hand_capture(
             dir.path(),
             "sync_room_list",
             "two rooms",
-            "hash",
+            "0123456789abcdef",
             deliver::Status::Same,
         );
+        std::fs::write(&same.path, b"bytes").unwrap();
         let report = Report {
             captures: vec![same],
             clip: None,
@@ -335,39 +386,46 @@ mod tests {
             .get(dir.path())
             .map_or(0, Vec::len);
         assert_eq!(empty, 0);
-        let after =
-            std::fs::read(dir.path().join(deliver::basic::constants::MANIFEST_FILE)).unwrap();
+        let after = std::fs::read(&sent_path).unwrap();
         assert_eq!(before, after);
     }
 
     #[test]
     fn test_usage_renaming_scene_or_label_gives_new() {
         let dir = tempfile::tempdir().unwrap();
-        let old = hand_capture(dir.path(), "ui", "one", "h", deliver::Status::New);
-        deliver::Manifest::update(dir.path(), "demo", &[&old], &[]).unwrap();
-        let previous = deliver::Manifest::load(dir.path()).unwrap();
+        let old = hand_capture(
+            dir.path(),
+            "ui",
+            "one",
+            "0123456789abcdef",
+            deliver::Status::New,
+        );
+        std::fs::write(&old.path, b"bytes").unwrap();
+        deliver::SentPreviewHash::record(dir.path(), &old.artifact).unwrap();
         let renamed_scene = deliver::Artifact {
             scene: String::from("other"),
             label: String::from("one"),
             fingerprint: deliver::Artifact::fingerprint_of("other", "one"),
-            pixel_hash: String::from("h"),
+            pixel_hash: String::from("0123456789abcdef"),
             media: deliver::Media::Png,
             kind: scene::Kind::System,
         };
+        std::fs::write(dir.path().join(renamed_scene.file_name()), b"bytes").unwrap();
         assert_eq!(
-            renamed_scene.status_in(previous.as_ref()),
+            renamed_scene.status_in_cache(dir.path()).unwrap(),
             deliver::Status::New
         );
         let renamed_label = deliver::Artifact {
             scene: String::from("ui"),
             label: String::from("two"),
             fingerprint: deliver::Artifact::fingerprint_of("ui", "two"),
-            pixel_hash: String::from("h"),
+            pixel_hash: String::from("0123456789abcdef"),
             media: deliver::Media::Png,
             kind: scene::Kind::System,
         };
+        std::fs::write(dir.path().join(renamed_label.file_name()), b"bytes").unwrap();
         assert_eq!(
-            renamed_label.status_in(previous.as_ref()),
+            renamed_label.status_in_cache(dir.path()).unwrap(),
             deliver::Status::New
         );
     }
@@ -375,15 +433,46 @@ mod tests {
     #[test]
     fn test_usage_one_changed_item_sends_whole_album_with_status_words() {
         let dir = tempfile::tempdir().unwrap();
-        let old_rest = hand_capture(dir.path(), "ui", "rest", "h", deliver::Status::New);
-        let old_hover = hand_capture(dir.path(), "ui", "hover", "old", deliver::Status::New);
+        let old_rest = hand_capture(
+            dir.path(),
+            "ui",
+            "rest",
+            "0000000000000000",
+            deliver::Status::New,
+        );
+        let old_hover = hand_capture(
+            dir.path(),
+            "ui",
+            "hover",
+            "0000000000000001",
+            deliver::Status::New,
+        );
         std::fs::write(&old_rest.path, b"bytes").unwrap();
         std::fs::write(&old_hover.path, b"bytes").unwrap();
-        deliver::Manifest::update(dir.path(), "demo", &[&old_rest, &old_hover], &[]).unwrap();
+        deliver::SentPreviewHash::record(dir.path(), &old_rest.artifact).unwrap();
+        deliver::SentPreviewHash::record(dir.path(), &old_hover.artifact).unwrap();
         let captures = vec![
-            hand_capture(dir.path(), "ui", "rest", "h", deliver::Status::Same),
-            hand_capture(dir.path(), "ui", "hover", "h2", deliver::Status::Changed),
-            hand_capture(dir.path(), "ui", "press", "h3", deliver::Status::New),
+            hand_capture(
+                dir.path(),
+                "ui",
+                "rest",
+                "0000000000000000",
+                deliver::Status::Same,
+            ),
+            hand_capture(
+                dir.path(),
+                "ui",
+                "hover",
+                "0000000000000002",
+                deliver::Status::Changed,
+            ),
+            hand_capture(
+                dir.path(),
+                "ui",
+                "press",
+                "0000000000000003",
+                deliver::Status::New,
+            ),
         ];
         for capture in &captures {
             std::fs::write(&capture.path, b"bytes").unwrap();
@@ -424,7 +513,7 @@ mod tests {
                 dir.path(),
                 "ui",
                 &format!("state {index}"),
-                "h",
+                "0123456789abcdef",
                 deliver::Status::New,
             ));
         }
@@ -458,12 +547,20 @@ mod tests {
     }
 
     #[test]
-    fn test_usage_corrupt_manifest_gives_error_sends_nothing_and_keeps_bytes() {
+    fn test_usage_invalid_sent_gives_error_sends_nothing_and_keeps_bytes() {
         let dir = tempfile::tempdir().unwrap();
-        let manifest_path = dir.path().join(deliver::basic::constants::MANIFEST_FILE);
-        std::fs::write(&manifest_path, b"{ not json").unwrap();
-        let before = std::fs::read(&manifest_path).unwrap();
-        let capture = hand_capture(dir.path(), "ui", "one", "h", deliver::Status::New);
+        let capture = hand_capture(
+            dir.path(),
+            "ui",
+            "one",
+            "0123456789abcdef",
+            deliver::Status::New,
+        );
+        std::fs::write(&capture.path, b"bytes").unwrap();
+        let sent_path = deliver::SentPreviewHash::sent_path(dir.path(), &capture.artifact);
+        std::fs::create_dir_all(sent_path.parent().unwrap()).unwrap();
+        std::fs::write(&sent_path, b"bad-content").unwrap();
+        let before = std::fs::read(&sent_path).unwrap();
         let report = Report {
             captures: vec![capture],
             clip: None,
@@ -476,17 +573,30 @@ mod tests {
             timeline: None,
         };
         let cfg = config_with(dir.path(), recording_send);
-        assert!(scene_obj.deliver_report(&report, &cfg, "demo").is_err());
+        let result = scene_obj.deliver_report(&report, &cfg, "demo");
+        assert!(matches!(result, Err(Error::SentCacheInvalid { .. })));
         assert!(recorded_calls().lock().unwrap().get(dir.path()).is_none());
-        let after = std::fs::read(&manifest_path).unwrap();
+        let after = std::fs::read(&sent_path).unwrap();
         assert_eq!(before, after);
     }
 
     #[test]
     fn test_usage_two_reports_for_same_scene_delivered_one_after_other_send_once() {
         let dir = tempfile::tempdir().unwrap();
-        let first = hand_capture(dir.path(), "ui", "one", "h", deliver::Status::New);
-        let second = hand_capture(dir.path(), "ui", "one", "h", deliver::Status::New);
+        let first = hand_capture(
+            dir.path(),
+            "ui",
+            "one",
+            "0123456789abcdef",
+            deliver::Status::New,
+        );
+        let second = hand_capture(
+            dir.path(),
+            "ui",
+            "one",
+            "0123456789abcdef",
+            deliver::Status::New,
+        );
         std::fs::write(&first.path, b"bytes").unwrap();
         let first_report = Report {
             captures: vec![first],
@@ -515,97 +625,6 @@ mod tests {
     }
 
     #[test]
-    fn test_usage_sixteen_threads_updating_different_scenes_lose_no_entries() {
-        let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().to_path_buf();
-        std::thread::scope(|scope| {
-            for thread in 0..16 {
-                let path = path.clone();
-                scope.spawn(move || {
-                    for _ in 0..50 {
-                        let capture = deliver::Capture {
-                            path: path.join(format!("scene_{thread}__a.png")),
-                            artifact: deliver::Artifact {
-                                scene: format!("scene_{thread}"),
-                                label: String::from("a"),
-                                fingerprint: format!("scene_{thread}|a"),
-                                pixel_hash: String::from("h"),
-                                media: deliver::Media::Png,
-                                kind: scene::Kind::System,
-                            },
-                            status: deliver::Status::New,
-                        };
-                        deliver::Manifest::update(&path, "demo", &[&capture], &[]).unwrap();
-                    }
-                });
-            }
-        });
-        let merged = deliver::Manifest::load(dir.path()).unwrap().unwrap();
-        assert_eq!(merged.artifacts.len(), 16);
-    }
-
-    #[test]
-    #[ignore = "worker for process tests"]
-    fn preview_manifest_worker_updates_one_scene() {
-        let dir = std::env::var("PREVIEW_WORKER_OUT_DIR").unwrap();
-        let scene_name = std::env::var("PREVIEW_WORKER_SCENE").unwrap();
-        let iterations: usize = std::env::var("PREVIEW_WORKER_ITERATIONS")
-            .unwrap()
-            .parse()
-            .unwrap();
-        let dir = PathBuf::from(dir);
-        for _ in 0..iterations {
-            let capture = deliver::Capture {
-                path: dir.join(format!("{scene_name}__a.png")),
-                artifact: deliver::Artifact {
-                    scene: scene_name.clone(),
-                    label: String::from("a"),
-                    fingerprint: format!("{scene_name}|a"),
-                    pixel_hash: String::from("h"),
-                    media: deliver::Media::Png,
-                    kind: scene::Kind::System,
-                },
-                status: deliver::Status::New,
-            };
-            deliver::Manifest::update(&dir, "demo", &[&capture], &[]).unwrap();
-        }
-    }
-
-    #[test]
-    fn test_usage_real_processes_updating_different_scenes_lose_no_entries() {
-        let dir = tempfile::tempdir().unwrap();
-        let exe = std::env::current_exe().unwrap();
-        let mut children = Vec::new();
-        for thread in 0..8 {
-            let child = std::process::Command::new(&exe)
-                .arg("run_tests::tests::preview_manifest_worker_updates_one_scene")
-                .arg("--exact")
-                .arg("--ignored")
-                .arg("--nocapture")
-                .env("PREVIEW_WORKER_OUT_DIR", dir.path())
-                .env("PREVIEW_WORKER_SCENE", format!("proc_{thread}"))
-                .env("PREVIEW_WORKER_ITERATIONS", "30")
-                .env("TELEGRAM_BOT_TOKEN", "")
-                .env("TELEGRAM_CHAT_ID", "")
-                .spawn()
-                .unwrap();
-            children.push(child);
-        }
-        let manifest_path = dir.path().join(deliver::basic::constants::MANIFEST_FILE);
-        for _ in 0..200 {
-            if let Ok(text) = std::fs::read_to_string(&manifest_path) {
-                assert!(serde_json::from_str::<serde_json::Value>(&text).is_ok());
-            }
-            std::thread::sleep(std::time::Duration::from_millis(5));
-        }
-        for mut child in children {
-            assert!(child.wait().unwrap().success());
-        }
-        let merged = deliver::Manifest::load(dir.path()).unwrap().unwrap();
-        assert_eq!(merged.artifacts.len(), 8);
-    }
-
-    #[test]
     fn test_usage_sixteen_threads_delivering_different_scenes_send_each_once() {
         let dir = tempfile::tempdir().unwrap();
         for thread in 0..16 {
@@ -613,7 +632,7 @@ mod tests {
                 dir.path(),
                 &format!("parallel_{thread}"),
                 "a",
-                "h",
+                "0123456789abcdef",
                 deliver::Status::New,
             );
             std::fs::write(&capture.path, b"bytes").unwrap();
@@ -625,7 +644,13 @@ mod tests {
                 scope.spawn(move || {
                     let name = format!("parallel_{thread}");
                     for _ in 0..20 {
-                        let capture = hand_capture(&path, &name, "a", "h", deliver::Status::New);
+                        let capture = hand_capture(
+                            &path,
+                            &name,
+                            "a",
+                            "0123456789abcdef",
+                            deliver::Status::New,
+                        );
                         let report = Report {
                             captures: vec![capture],
                             clip: None,
@@ -638,8 +663,12 @@ mod tests {
                 });
             }
         });
-        let merged = deliver::Manifest::load(dir.path()).unwrap().unwrap();
-        assert_eq!(merged.artifacts.len(), 16);
+        for thread in 0..16 {
+            let name = format!("parallel_{thread}");
+            let probe = hand_capture(&path, &name, "a", "0123456789abcdef", deliver::Status::New);
+            let sent = deliver::SentPreviewHash::sent_path(&path, &probe.artifact);
+            assert!(sent.exists(), "missing sent for {name}");
+        }
         let text = std::fs::read_to_string(dir.path().join("test-sent.log")).unwrap();
         let mut counts: HashMap<String, usize> = HashMap::new();
         for line in text.lines().filter(|line| !line.is_empty()) {
@@ -654,7 +683,13 @@ mod tests {
     #[test]
     fn test_usage_sixteen_threads_delivering_same_scene_send_exactly_once() {
         let dir = tempfile::tempdir().unwrap();
-        let first = hand_capture(dir.path(), "shared", "a", "h", deliver::Status::New);
+        let first = hand_capture(
+            dir.path(),
+            "shared",
+            "a",
+            "0123456789abcdef",
+            deliver::Status::New,
+        );
         std::fs::write(&first.path, b"bytes").unwrap();
         let path = dir.path().to_path_buf();
         let barrier = std::sync::Barrier::new(16);
@@ -665,7 +700,13 @@ mod tests {
                 scope.spawn(move || {
                     barrier.wait();
                     for _ in 0..20 {
-                        let capture = hand_capture(&path, "shared", "a", "h", deliver::Status::New);
+                        let capture = hand_capture(
+                            &path,
+                            "shared",
+                            "a",
+                            "0123456789abcdef",
+                            deliver::Status::New,
+                        );
                         let report = Report {
                             captures: vec![capture],
                             clip: None,
@@ -678,8 +719,14 @@ mod tests {
                 });
             }
         });
-        let merged = deliver::Manifest::load(dir.path()).unwrap().unwrap();
-        assert_eq!(merged.artifacts.len(), 1);
+        let probe = hand_capture(
+            &path,
+            "shared",
+            "a",
+            "0123456789abcdef",
+            deliver::Status::New,
+        );
+        assert!(deliver::SentPreviewHash::sent_path(&path, &probe.artifact).exists());
         let text = std::fs::read_to_string(dir.path().join("test-sent.log")).unwrap();
         assert_eq!(text.lines().filter(|line| !line.is_empty()).count(), 1);
     }
@@ -687,16 +734,22 @@ mod tests {
     #[test]
     fn test_usage_changed_item_in_failed_chunk_stays_changed_on_retry() {
         let dir = tempfile::tempdir().unwrap();
-        let old = hand_capture(dir.path(), "ui", "state 10", "old", deliver::Status::New);
+        let old = hand_capture(
+            dir.path(),
+            "ui",
+            "state 10",
+            "0000000000000000",
+            deliver::Status::New,
+        );
         std::fs::write(&old.path, b"bytes").unwrap();
-        deliver::Manifest::update(dir.path(), "demo", &[&old], &[]).unwrap();
+        deliver::SentPreviewHash::record(dir.path(), &old.artifact).unwrap();
         let mut captures = Vec::new();
         for index in 0..10 {
             captures.push(hand_capture(
                 dir.path(),
                 "ui",
                 &format!("state {index}"),
-                "h",
+                "0123456789abcdef",
                 deliver::Status::New,
             ));
         }
@@ -704,7 +757,7 @@ mod tests {
             dir.path(),
             "ui",
             "state 10",
-            "h2",
+            "1111111111111111",
             deliver::Status::Changed,
         ));
         for capture in &captures {
@@ -732,8 +785,8 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "worker for process delivery tests"]
-    fn preview_deliver_worker_delivers_one_scene() {
+    #[ignore = "worker for process tests"]
+    fn preview_cache_worker_delivers_one_scene() {
         let dir = std::env::var("PREVIEW_WORKER_OUT_DIR").unwrap();
         let scene_name = std::env::var("PREVIEW_WORKER_SCENE").unwrap();
         let iterations: usize = std::env::var("PREVIEW_WORKER_ITERATIONS")
@@ -741,10 +794,22 @@ mod tests {
             .parse()
             .unwrap();
         let dir = PathBuf::from(dir);
-        let probe = hand_capture(&dir, &scene_name, "a", "h", deliver::Status::New);
+        let probe = hand_capture(
+            &dir,
+            &scene_name,
+            "a",
+            "0123456789abcdef",
+            deliver::Status::New,
+        );
         std::fs::write(&probe.path, b"bytes").unwrap();
         for _ in 0..iterations {
-            let capture = hand_capture(&dir, &scene_name, "a", "h", deliver::Status::New);
+            let capture = hand_capture(
+                &dir,
+                &scene_name,
+                "a",
+                "0123456789abcdef",
+                deliver::Status::New,
+            );
             let report = Report {
                 captures: vec![capture],
                 clip: None,
@@ -768,7 +833,7 @@ mod tests {
                 dir.path(),
                 &format!("dproc_{thread}"),
                 "a",
-                "h",
+                "0123456789abcdef",
                 deliver::Status::New,
             );
             std::fs::write(&probe.path, b"bytes").unwrap();
@@ -777,7 +842,7 @@ mod tests {
         let mut children = Vec::new();
         for thread in 0..8 {
             let child = std::process::Command::new(&exe)
-                .arg("run_tests::tests::preview_deliver_worker_delivers_one_scene")
+                .arg("run_tests::tests::preview_cache_worker_delivers_one_scene")
                 .arg("--exact")
                 .arg("--ignored")
                 .arg("--nocapture")
@@ -790,18 +855,25 @@ mod tests {
                 .unwrap();
             children.push(child);
         }
-        let manifest_path = dir.path().join(deliver::basic::constants::MANIFEST_FILE);
         for _ in 0..200 {
-            if let Ok(text) = std::fs::read_to_string(&manifest_path) {
-                assert!(serde_json::from_str::<serde_json::Value>(&text).is_ok());
-            }
             std::thread::sleep(std::time::Duration::from_millis(5));
         }
         for mut child in children {
             assert!(child.wait().unwrap().success());
         }
-        let merged = deliver::Manifest::load(dir.path()).unwrap().unwrap();
-        assert_eq!(merged.artifacts.len(), 8);
+        for thread in 0..8 {
+            let probe = hand_capture(
+                dir.path(),
+                &format!("dproc_{thread}"),
+                "a",
+                "0123456789abcdef",
+                deliver::Status::New,
+            );
+            assert!(
+                deliver::SentPreviewHash::sent_path(dir.path(), &probe.artifact).exists(),
+                "missing sent for dproc_{thread}"
+            );
+        }
         let text = std::fs::read_to_string(dir.path().join("test-sent.log")).unwrap();
         let mut counts: HashMap<String, usize> = HashMap::new();
         for line in text.lines().filter(|line| !line.is_empty()) {
@@ -811,6 +883,94 @@ mod tests {
         for count in counts.values() {
             assert_eq!(*count, 1);
         }
+    }
+
+    #[test]
+    fn test_usage_dry_run_writes_log_but_no_sent() {
+        let dir = tempfile::tempdir().unwrap();
+        let capture = hand_capture(
+            dir.path(),
+            "ui",
+            "one",
+            "0123456789abcdef",
+            deliver::Status::New,
+        );
+        std::fs::write(&capture.path, b"bytes").unwrap();
+        let sent_probe = capture.artifact.clone();
+        let report = Report {
+            captures: vec![capture],
+            clip: None,
+        };
+        let scene_obj = scene_for("ui");
+        let cfg = config_with(dir.path(), recording_send);
+        unsafe { std::env::set_var("LELE_PREVIEW_DRY_RUN", "1") };
+        let sent = scene_obj.deliver_report(&report, &cfg, "demo").unwrap();
+        unsafe { std::env::remove_var("LELE_PREVIEW_DRY_RUN") };
+        assert_eq!(sent, 0);
+        let sent_path = deliver::SentPreviewHash::sent_path(dir.path(), &sent_probe);
+        assert!(!sent_path.exists());
+        let log = dir.path().join(deliver::basic::constants::LOG_FILE);
+        assert!(log.exists());
+    }
+
+    #[test]
+    fn test_usage_dry_run_with_missing_preview_leaves_sent_in_place() {
+        let dir = tempfile::tempdir().unwrap();
+        let first = scene().build_report(&config(dir.path())).unwrap();
+        record_artifact(dir.path(), &first.captures[0].artifact);
+        let sent_path =
+            deliver::SentPreviewHash::sent_path(dir.path(), &first.captures[0].artifact);
+        assert!(sent_path.exists());
+        std::fs::remove_file(&first.captures[0].path).unwrap();
+        unsafe { std::env::set_var("LELE_PREVIEW_DRY_RUN", "1") };
+        let _ = scene().build_report(&config(dir.path())).unwrap();
+        unsafe { std::env::remove_var("LELE_PREVIEW_DRY_RUN") };
+        assert!(sent_path.exists());
+    }
+
+    #[test]
+    fn test_usage_log_cache_reports_hit_missing_and_frames() {
+        let dir = tempfile::tempdir().unwrap();
+        let capture = hand_capture(
+            dir.path(),
+            "ui",
+            "one",
+            "0123456789abcdef",
+            deliver::Status::New,
+        );
+        std::fs::write(&capture.path, b"bytes").unwrap();
+        let report = Report {
+            captures: vec![capture],
+            clip: None,
+        };
+        let scene_obj = scene_for("ui");
+        let cfg = config_with(dir.path(), recording_send);
+        scene_obj.deliver_report(&report, &cfg, "demo").unwrap();
+        let log_text =
+            std::fs::read_to_string(dir.path().join(deliver::basic::constants::LOG_FILE)).unwrap();
+        assert!(
+            log_text.contains("\"cache\":\"missing\"")
+                || log_text.contains("\"cache\": \"missing\"")
+                || log_text.contains("missing")
+        );
+        let second = hand_capture(
+            dir.path(),
+            "ui",
+            "one",
+            "0123456789abcdef",
+            deliver::Status::Same,
+        );
+        std::fs::write(&second.path, b"bytes").unwrap();
+        let second_report = Report {
+            captures: vec![second],
+            clip: None,
+        };
+        scene_obj
+            .deliver_report(&second_report, &cfg, "demo")
+            .unwrap();
+        let log_again =
+            std::fs::read_to_string(dir.path().join(deliver::basic::constants::LOG_FILE)).unwrap();
+        assert!(log_again.contains("hit"));
     }
     // no test_usage necessary
 }

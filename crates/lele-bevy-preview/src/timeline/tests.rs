@@ -58,7 +58,7 @@ mod tests {
     fn test_usage() {
         let dir = tempfile::tempdir().unwrap();
         let clip = scene(Some(spec(3)))
-            .build_clip(&fast(dir.path()), None)
+            .build_clip(&fast(dir.path()))
             .unwrap()
             .expect("a declared timeline must produce a clip");
         assert!(clip.path.exists(), "{} missing", clip.path.display());
@@ -82,7 +82,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let config = fast(dir.path());
         assert_eq!(scene(None).render_frames(&config).unwrap().len(), 0);
-        assert!(scene(None).build_clip(&config, None).unwrap().is_none());
+        assert!(scene(None).build_clip(&config).unwrap().is_none());
     }
 
     #[test]
@@ -103,7 +103,7 @@ mod tests {
     fn test_usage_a_missing_ffmpeg_binary_is_reported_not_ignored() {
         let dir = tempfile::tempdir().unwrap();
         unsafe { std::env::set_var("LELE_FFMPEG", "/nonexistent/ffmpeg-binary") };
-        let result = scene(Some(spec(2))).build_clip(&fast(dir.path()), None);
+        let result = scene(Some(spec(2))).build_clip(&fast(dir.path()));
         unsafe { std::env::remove_var("LELE_FFMPEG") };
         assert!(matches!(result, Err(crate::Error::FfmpegSpawn { .. })));
     }
@@ -115,7 +115,7 @@ mod tests {
             apply: noop,
             ..spec(3)
         };
-        let result = scene(Some(flat)).build_clip(&fast(dir.path()), None);
+        let result = scene(Some(flat)).build_clip(&fast(dir.path()));
         assert!(matches!(result, Err(crate::Error::StaticClip { .. })));
     }
 

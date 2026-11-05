@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use atomic_delegate_macros::atomic_delegates;
 
+use crate::Error;
 use crate::deliver;
 use crate::report::Report;
 
@@ -10,16 +11,15 @@ pub struct FreshDelivery {
     pub captures: Vec<deliver::Capture>,
     pub clip: Option<deliver::Capture>,
     pub old_hashes: HashMap<String, String>,
-    pub manifest_state: String,
+    pub cache_state: String,
 }
 
 #[atomic_delegates]
 impl FreshDelivery {
-    #[must_use]
-    pub(crate) fn from_report_and_manifest(
+    pub(crate) fn try_from_report_and_cache(
         report: &Report,
-        filtered: Option<&deliver::Manifest>,
-    ) -> Self {
+        out_dir: &std::path::Path,
+    ) -> Result<Self, Error> {
     }
     pub(crate) fn log_captures_with_outcome(
         &self,
@@ -41,9 +41,9 @@ mod tests {
             captures: Vec::new(),
             clip: None,
             old_hashes: HashMap::new(),
-            manifest_state: String::from("missing"),
+            cache_state: String::from("missing"),
         };
         assert_eq!(fresh.captures.len(), 0);
-        assert!(fresh.manifest_state.contains("missing"));
+        assert!(fresh.cache_state.contains("missing"));
     }
 }

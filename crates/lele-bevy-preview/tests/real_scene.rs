@@ -177,7 +177,7 @@ fn a_changed_visual_is_reported_as_changed() {
     let first = scene(vec![rest()])
         .build_report(&config(dir.path()))
         .unwrap();
-    deliver::Manifest::update(dir.path(), "real_scene", &[&first.captures[0]], &[]).unwrap();
+    deliver::SentPreviewHash::record(dir.path(), &first.captures[0].artifact).unwrap();
     let tinted = scene(vec![State {
         label: String::from("rest"),
         apply: tint,
