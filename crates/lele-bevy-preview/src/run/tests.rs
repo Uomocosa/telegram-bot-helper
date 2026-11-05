@@ -301,18 +301,6 @@ mod tests {
         }
     }
 
-    fn hand_capture(
-        dir: &std::path::Path,
-        scene_name: &str,
-        label: &str,
-        red: u8,
-        green: u8,
-        blue: u8,
-        status: deliver::Status,
-    ) -> deliver::Capture {
-        staging_capture(dir, scene_name, label, red, green, blue, status)
-    }
-
     fn config_with(
         dir: &std::path::Path,
         send: fn(&[&deliver::Capture], &str) -> Result<usize, Error>,
@@ -814,31 +802,6 @@ mod tests {
             deliver::Status::New,
             "missing mp4 is New"
         );
-    }
-
-    #[test]
-    fn test_usage_log_baseline_reports_present_missing_and_invalid() {
-        let dir = tempfile::tempdir().unwrap();
-        let capture = hand_capture(dir.path(), "ui", "one", 60, 60, 60, deliver::Status::New);
-        let mut report = Report {
-            captures: vec![capture],
-            clip: None,
-        };
-        let scene_obj = scene_for("ui");
-        let cfg = config_with(dir.path(), recording_send);
-        scene_obj.deliver_report(&mut report, &cfg).unwrap();
-        let log_text =
-            std::fs::read_to_string(dir.path().join(deliver::basic::constants::LOG_FILE)).unwrap();
-        assert!(log_text.contains("\"baseline\":\"missing\"") || log_text.contains("missing"));
-        let second = hand_capture(dir.path(), "ui", "one", 60, 60, 60, deliver::Status::Same);
-        let mut second_report = Report {
-            captures: vec![second],
-            clip: None,
-        };
-        scene_obj.deliver_report(&mut second_report, &cfg).unwrap();
-        let log_again =
-            std::fs::read_to_string(dir.path().join(deliver::basic::constants::LOG_FILE)).unwrap();
-        assert!(log_again.contains("present"));
     }
 
     #[test]

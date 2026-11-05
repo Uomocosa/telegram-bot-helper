@@ -14,12 +14,6 @@ pub fn deliver_report(
     let fps = match scene.timeline.as_ref() {
         Some(spec) => spec.fps,
         None if report.clip.is_some() => {
-            for capture in report.captures.iter().chain(report.clip.iter()) {
-                let entry = deliver::PreviewDecisionLog::from_capture_old_hash_baseline_and_outcome(
-                    capture, "", "invalid", "failed",
-                );
-                let _ = entry.append(&config.out_dir);
-            }
             let _ = std::fs::remove_dir_all(&staging_root);
             return Err(Error::Scene(format!(
                 "scene `{}` has a clip but no timeline",
@@ -32,13 +26,6 @@ pub fn deliver_report(
         match deliver::FreshDelivery::try_from_report_and_baseline(report, &config.out_dir, fps) {
             Ok(fresh) => fresh,
             Err(error) => {
-                for capture in report.captures.iter().chain(report.clip.iter()) {
-                    let entry =
-                        deliver::PreviewDecisionLog::from_capture_old_hash_baseline_and_outcome(
-                            capture, "", "invalid", "failed",
-                        );
-                    let _ = entry.append(&config.out_dir);
-                }
                 let _ = std::fs::remove_dir_all(&staging_root);
                 return Err(error);
             }
@@ -54,8 +41,6 @@ pub fn deliver_report(
         let positions = fresh.all_positions();
         scene.stash_positions_to_unsent(&mut fresh, &positions, config, &staging_root);
         report.sync_paths_from_fresh(&fresh);
-        let all: Vec<&deliver::Capture> = fresh.captures.iter().chain(fresh.clip.iter()).collect();
-        let _ = fresh.log_captures_with_outcome(&all, "dry_run", &config.out_dir);
         let _ = std::fs::remove_dir_all(&staging_root);
         return Ok(0);
     }
@@ -69,8 +54,6 @@ pub fn deliver_report(
         let positions = fresh.all_positions();
         scene.drop_positions_staged(&mut fresh, &positions, config, &staging_root);
         report.sync_paths_from_fresh(&fresh);
-        let all: Vec<&deliver::Capture> = fresh.captures.iter().chain(fresh.clip.iter()).collect();
-        let _ = fresh.log_captures_with_outcome(&all, "skipped_same", &config.out_dir);
         let _ = std::fs::remove_dir_all(&staging_root);
         return Ok(0);
     }

@@ -2,7 +2,6 @@ use std::path::Path;
 
 use crate::Error;
 use crate::PreviewApp;
-use crate::deliver;
 use crate::preview;
 use crate::preview::basic::constants::SETTLE_CAPTURES;
 
@@ -29,35 +28,7 @@ pub fn settled(
         }
         last = Some(image);
     }
-    let out_dir = out
-        .parent()
-        .map(std::path::Path::to_path_buf)
-        .unwrap_or_default();
-    let key = out
-        .file_name()
-        .and_then(|name| name.to_str())
-        .unwrap_or_default()
-        .to_string();
-    let scene_name = out
-        .file_stem()
-        .and_then(|stem| stem.to_str())
-        .unwrap_or_default()
-        .to_string();
     tracing::warn!(path = %out.display(), "preview settled without a stable frame");
-    let entry = deliver::PreviewDecisionLog {
-        time: deliver::PreviewDecisionLog::current_time(),
-        run: deliver::PreviewDecisionLog::current_run(),
-        pid: std::process::id(),
-        test_scene: scene_name,
-        key,
-        status: String::from("unknown"),
-        old_hash: String::new(),
-        new_hash: String::new(),
-        baseline: String::from("missing"),
-        driver: deliver::PreviewDecisionLog::current_driver(),
-        outcome: String::from("unsettled"),
-    };
-    let _ = entry.append(&out_dir);
     last.ok_or(Error::NoFrame(SETTLE_CAPTURES))
 }
 

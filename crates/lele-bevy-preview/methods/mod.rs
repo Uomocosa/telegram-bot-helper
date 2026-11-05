@@ -5,6 +5,5 @@ pub mod captured_image;
 pub mod fresh_delivery;
 pub mod kind;
 pub mod preview_app;
-pub mod preview_decision_log;
 pub mod report;
 pub mod scene;
