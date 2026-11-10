@@ -14,6 +14,10 @@ pub struct Bounds {
 #[atomic_delegates]
 impl Bounds {
     pub fn of_image(path: &std::path::Path) -> Result<Option<Bounds>, Error> {}
+}
+
+#[atomic_delegates]
+impl Bounds {
     pub(crate) fn background_colour(image: &image::RgbaImage) -> Option<image::Rgba<u8>> {}
 }
 

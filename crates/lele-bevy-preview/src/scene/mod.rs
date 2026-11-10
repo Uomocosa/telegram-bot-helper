@@ -6,4 +6,5 @@ mod kind;
 pub use kind::Kind;
 mod scene;
 pub use scene::Scene;
+#[path = "__bevy_systems__/mod.rs"]
 pub mod bevy_systems;

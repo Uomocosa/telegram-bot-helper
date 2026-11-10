@@ -8,7 +8,7 @@ pub mod error;
 pub use error::Error;
 
 pub mod layout;
-#[path = "../methods/mod.rs"]
+#[path = "../__methods__/mod.rs"]
 pub mod methods;
 pub mod preview;
 mod preview_app;

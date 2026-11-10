@@ -50,6 +50,10 @@ impl Scene {
     ) -> Result<usize, Error> {
     }
     pub fn run(&self, config: &preview::Config) -> Result<Report, Error> {}
+}
+
+#[atomic_delegates]
+impl Scene {
     pub(crate) fn send_fresh_delivery_and_record(
         &self,
         fresh: &mut deliver::FreshDelivery,

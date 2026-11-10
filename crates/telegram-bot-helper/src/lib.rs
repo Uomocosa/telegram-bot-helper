@@ -5,7 +5,7 @@ pub mod caption;
 pub mod error;
 pub mod guard;
 pub mod media_group;
-#[path = "../methods/mod.rs"]
+#[path = "../__methods__/mod.rs"]
 pub mod methods;
 pub mod telegram_bot;
 pub mod test_log;

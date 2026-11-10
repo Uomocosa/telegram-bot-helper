@@ -20,6 +20,10 @@ pub struct PreviewApp {
 impl PreviewApp {
     #[must_use]
     pub fn from_scene(scene: &scene::Scene, config: &preview::Config) -> Self {}
+}
+
+#[atomic_delegates]
+impl PreviewApp {
     pub fn advance(&mut self, step: Duration) {}
     pub fn capture(&mut self, out: &Path, budget: u32) -> Result<preview::CapturedImage, Error> {}
     pub fn settled(

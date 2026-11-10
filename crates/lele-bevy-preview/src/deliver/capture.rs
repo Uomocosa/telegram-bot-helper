@@ -34,6 +34,10 @@ impl Capture {
     pub fn assert_centered(&self, tolerance: u32) -> Result<(), Error> {}
     pub fn send_one(&self, caption: &str) -> Result<bool, Error> {}
     pub fn send_group(items: &[&Capture], caption: &str) -> Result<usize, Error> {}
+}
+
+#[atomic_delegates]
+impl Capture {
     pub(crate) fn send_album(items: &[&Capture], caption: &str) -> Result<usize, Error> {}
     pub(crate) fn drop_staged_file(&self, staging_root: &std::path::Path, scene_name: &str) {}
     pub(crate) fn stash_staged_to_unsent(

@@ -17,6 +17,10 @@ pub struct TelegramBot {
 impl TelegramBot {
     #[must_use]
     pub fn from_env() -> Option<Self> {}
+}
+
+#[atomic_delegates]
+impl TelegramBot {
     #[must_use]
     pub fn is_status_reporting_enabled() -> bool {}
     pub fn send_text(&self, text: &str) -> Result<String, Error> {}
@@ -31,6 +35,10 @@ impl TelegramBot {
     pub fn latest_message<'u>(&self, updates: &'u [Value]) -> Option<&'u Value> {}
     pub fn send_text_best_effort(text: &str) {}
     pub fn send_video_best_effort(clip: &Path, caption: &Caption) {}
+}
+
+#[atomic_delegates]
+impl TelegramBot {
     pub(crate) fn read_album_item(item: &MediaItem) -> Result<Vec<u8>, Error> {}
 }
 

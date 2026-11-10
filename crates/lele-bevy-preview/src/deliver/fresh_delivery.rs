@@ -18,6 +18,10 @@ impl FreshDelivery {
         fps: u32,
     ) -> Result<Self, Error> {
     }
+}
+
+#[atomic_delegates]
+impl FreshDelivery {
     pub(crate) fn all_positions(&self) -> Vec<(usize, bool)> {}
 }
 
