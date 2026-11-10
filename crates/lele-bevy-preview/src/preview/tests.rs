@@ -16,11 +16,11 @@ mod tests {
             kind: scene::Kind::System,
             build: noop_build,
             states: vec![
-                crate::scene::basic::structs::State {
+                crate::scene::State {
                     label: String::from("one room"),
                     apply: noop,
                 },
-                crate::scene::basic::structs::State {
+                crate::scene::State {
                     label: String::from("no rooms!"),
                     apply: noop,
                 },
@@ -42,12 +42,9 @@ mod tests {
     #[test]
     fn test_usage() {
         let config = preview::Config::default();
-        assert_eq!(config.width, preview::basic::constants::DEFAULT_WIDTH);
-        assert_eq!(config.height, preview::basic::constants::DEFAULT_HEIGHT);
-        assert_eq!(
-            config.warmup_frames,
-            preview::basic::constants::DEFAULT_WARMUP_FRAMES
-        );
+        assert_eq!(config.width, preview::DEFAULT_WIDTH);
+        assert_eq!(config.height, preview::DEFAULT_HEIGHT);
+        assert_eq!(config.warmup_frames, preview::DEFAULT_WARMUP_FRAMES);
         assert!(config.out_dir.ends_with("ui_preview"));
     }
 
@@ -100,10 +97,7 @@ mod tests {
         for state in &rendered {
             assert!(state.path.exists(), "{} missing", state.path.display());
             assert!(state.label.len() > 1);
-            assert_eq!(
-                state.pixel_hash.len(),
-                crate::deliver::basic::constants::HASH_CHARS
-            );
+            assert_eq!(state.pixel_hash.len(), crate::deliver::HASH_CHARS);
         }
         assert!(
             rendered[0]

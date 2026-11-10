@@ -1,13 +1,12 @@
 use crate::deliver;
-use crate::deliver::basic::enums::Status;
 
 #[must_use]
 pub const fn status_word(capture: &deliver::Capture) -> &'static str {
     let status = capture.status;
     match status {
-        Status::New => "new",
-        Status::Changed => "changed",
-        Status::Same => "same",
+        deliver::Status::New => "new",
+        deliver::Status::Changed => "changed",
+        deliver::Status::Same => "same",
     }
 }
 

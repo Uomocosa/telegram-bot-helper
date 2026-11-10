@@ -1,6 +1,6 @@
 use crate::Error;
 use crate::scene;
-use crate::scene::basic::constants::{MAX_FPS, MAX_TIMELINE_FRAMES};
+use crate::scene::{MAX_FPS, MAX_TIMELINE_FRAMES};
 
 pub fn check_timeline(scene: &scene::Scene) -> Result<(), Error> {
     let Some(timeline) = scene.timeline.as_ref() else {

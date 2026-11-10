@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use bevy::prelude::*;
 use lele_bevy_preview::preview::Config;
 use lele_bevy_preview::scene::Scene;
-use lele_bevy_preview::scene::basic::structs::{State, Timeline};
+use lele_bevy_preview::scene::{State, Timeline};
 
 #[derive(Component)]
 struct Panel;

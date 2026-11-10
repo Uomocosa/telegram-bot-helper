@@ -1,6 +1,7 @@
 #[path = "__basic__/mod.rs"]
-pub mod basic;
+mod basic;
 pub use basic::components::PreviewCenter;
+pub use basic::constants::{MAX_FPS, MAX_STATES, MAX_TIMELINE_FRAMES};
 pub use basic::structs::{State, Timeline};
 mod kind;
 pub use kind::Kind;

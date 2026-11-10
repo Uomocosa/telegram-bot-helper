@@ -1,9 +1,9 @@
-use crate::deliver::basic::constants::HASH_CHARS;
+use crate::deliver;
 
 #[must_use]
 pub fn hash_bytes(bytes: &[u8]) -> String {
     let hex = blake3::hash(bytes).to_hex();
-    hex.chars().take(HASH_CHARS).collect()
+    hex.chars().take(deliver::HASH_CHARS).collect()
 }
 
 #[cfg(test)]

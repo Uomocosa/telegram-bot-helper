@@ -48,7 +48,7 @@ mod tests {
         );
         assert_eq!(
             deliver::Artifact::hash_bytes(b"abc").len(),
-            deliver::basic::constants::HASH_CHARS
+            deliver::HASH_CHARS
         );
         assert!(capture("rest", deliver::Status::Changed).is_sendable());
         assert!(capture("rest", deliver::Status::New).is_sendable());

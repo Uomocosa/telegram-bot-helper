@@ -1,6 +1,5 @@
 use crate::Error;
 use crate::scene;
-use crate::scene::basic::constants::MAX_STATES;
 
 pub fn check(scene: &scene::Scene) -> Result<(), Error> {
     if scene.name.trim().is_empty() {
@@ -12,11 +11,12 @@ pub fn check(scene: &scene::Scene) -> Result<(), Error> {
             scene.name
         )));
     }
-    if scene.states.len() > MAX_STATES {
+    if scene.states.len() > scene::MAX_STATES {
         return Err(Error::Scene(format!(
-            "scene `{}` declares {} states, over the cap of {MAX_STATES}",
+            "scene `{}` declares {} states, over the cap of {}",
             scene.name,
-            scene.states.len()
+            scene.states.len(),
+            scene::MAX_STATES
         )));
     }
     for state in &scene.states {

@@ -1,6 +1,5 @@
 use crate::Error;
 use crate::deliver;
-use crate::deliver::basic::enums::Media;
 use crate::preview;
 use crate::scene;
 
@@ -40,7 +39,7 @@ pub fn build_clip(
             &format!("clip:{}", spec.label),
         ),
         pixel_hash: scene::Scene::clip_hash(spec.fps, &hashes),
-        media: Media::Mp4,
+        media: deliver::Media::Mp4,
         kind: scene.kind,
     };
     let status = artifact.clip_status_against_baseline(&config.out_dir, spec.fps)?;

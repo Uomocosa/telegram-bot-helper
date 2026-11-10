@@ -3,7 +3,6 @@ use std::path::Path;
 use crate::Error;
 use crate::PreviewApp;
 use crate::preview;
-use crate::preview::basic::constants::SETTLE_CAPTURES;
 
 pub fn settled(
     app: &mut PreviewApp,
@@ -12,7 +11,7 @@ pub fn settled(
     min_distinct_colors: usize,
 ) -> Result<preview::CapturedImage, Error> {
     let mut last: Option<preview::CapturedImage> = None;
-    for _ in 0..SETTLE_CAPTURES {
+    for _ in 0..preview::SETTLE_CAPTURES {
         let Ok(image) = app.capture(out, budget) else {
             continue;
         };
@@ -29,7 +28,7 @@ pub fn settled(
         last = Some(image);
     }
     tracing::warn!(path = %out.display(), "preview settled without a stable frame");
-    last.ok_or(Error::NoFrame(SETTLE_CAPTURES))
+    last.ok_or(Error::NoFrame(preview::SETTLE_CAPTURES))
 }
 
 #[cfg(test)]

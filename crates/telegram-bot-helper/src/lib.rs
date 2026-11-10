@@ -1,12 +1,12 @@
 pub mod api_response;
 #[path = "__basic__/mod.rs"]
-pub mod basic;
+mod basic;
 pub mod caption;
 pub mod error;
 pub mod guard;
 pub mod media_group;
 #[path = "../__methods__/mod.rs"]
-pub mod methods;
+mod methods;
 pub mod telegram_bot;
 pub mod test_log;
 pub use api_response::ApiResponse;

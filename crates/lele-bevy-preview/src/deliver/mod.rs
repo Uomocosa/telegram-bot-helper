@@ -1,6 +1,7 @@
 #[path = "__basic__/mod.rs"]
-pub mod basic;
+mod basic;
 
+pub use basic::constants::HASH_CHARS;
 pub use basic::enums::Media;
 pub use basic::enums::Status;
 

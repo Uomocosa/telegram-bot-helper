@@ -2,7 +2,6 @@ use std::path::Path;
 
 use crate::Error;
 use crate::deliver;
-use crate::deliver::basic::enums::Media;
 use crate::preview;
 use crate::scene;
 
@@ -19,7 +18,7 @@ pub fn collect(
             label: state.label.clone(),
             fingerprint: deliver::Artifact::fingerprint_of(scene, &state.label),
             pixel_hash: state.pixel_hash.clone(),
-            media: Media::Png,
+            media: deliver::Media::Png,
             kind,
         };
         let status = artifact.status_against_baseline(out_dir)?;

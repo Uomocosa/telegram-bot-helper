@@ -6,7 +6,7 @@ mod tests {
 
     use crate::Error;
     use crate::scene::Scene;
-    use crate::scene::basic::structs::{State, Timeline};
+    use crate::scene::{State, Timeline};
 
     fn noop(_world: &mut World) {}
     fn noop_build(_app: &mut App) {}

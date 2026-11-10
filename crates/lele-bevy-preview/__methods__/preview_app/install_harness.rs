@@ -6,7 +6,7 @@ use bevy::time::TimeUpdateStrategy;
 
 use crate::PreviewApp;
 use crate::preview;
-use crate::preview::basic::constants::{CLEAR_B, CLEAR_G, CLEAR_R};
+use crate::preview::{CLEAR_B, CLEAR_G, CLEAR_R};
 
 pub fn install_harness(app: &mut App, config: &preview::Config) -> Handle<Image> {
     PreviewApp::add_headless_plugins(app);

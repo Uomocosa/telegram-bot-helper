@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use lele_bevy_preview::preview::Config;
 use lele_bevy_preview::scene::Scene;
-use lele_bevy_preview::scene::basic::structs::State;
+use lele_bevy_preview::scene::State;
 
 #[derive(Component)]
 struct Panel;

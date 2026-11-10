@@ -25,6 +25,6 @@ mod tests {
         let first = hash_png_pixels(&path).unwrap();
         let second = hash_png_pixels(&path).unwrap();
         assert_eq!(first, second);
-        assert_eq!(first.len(), crate::deliver::basic::constants::HASH_CHARS);
+        assert_eq!(first.len(), crate::deliver::HASH_CHARS);
     }
 }

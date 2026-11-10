@@ -1,10 +1,9 @@
 use crate::deliver;
-use crate::deliver::basic::enums::Status;
 
 #[must_use]
 pub const fn is_sendable(capture: &deliver::Capture) -> bool {
     let status = capture.status;
-    matches!(status, Status::New | Status::Changed)
+    matches!(status, deliver::Status::New | deliver::Status::Changed)
 }
 
 #[cfg(test)]

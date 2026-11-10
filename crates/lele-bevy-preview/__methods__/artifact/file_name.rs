@@ -1,11 +1,10 @@
 use crate::deliver;
-use crate::deliver::basic::enums::Media;
 
 #[must_use]
 pub fn file_name(artifact: &deliver::Artifact) -> String {
     let extension = match artifact.media {
-        Media::Png => "png",
-        Media::Mp4 => "mp4",
+        deliver::Media::Png => "png",
+        deliver::Media::Mp4 => "mp4",
     };
     format!(
         "{}__{}.{extension}",

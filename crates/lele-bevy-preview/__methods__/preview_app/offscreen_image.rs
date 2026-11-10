@@ -2,7 +2,7 @@ use bevy::asset::RenderAssetUsages;
 use bevy::image::Image;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages};
 
-use crate::preview::basic::constants::{BACKGROUND_A, BACKGROUND_B, BACKGROUND_G, BACKGROUND_R};
+use crate::preview::{BACKGROUND_A, BACKGROUND_B, BACKGROUND_G, BACKGROUND_R};
 
 #[must_use]
 pub fn offscreen_image(width: u32, height: u32) -> Image {

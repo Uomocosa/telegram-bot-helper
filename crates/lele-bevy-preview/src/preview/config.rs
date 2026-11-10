@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use crate::Error;
 use crate::deliver;
-use crate::preview::basic::constants::{
+use crate::preview::{
     DEFAULT_HEIGHT, DEFAULT_LEAD_IN_FRAMES, DEFAULT_MAX_CAPTURE_FRAMES,
     DEFAULT_MIN_DISTINCT_COLORS, DEFAULT_WARMUP_FRAMES, DEFAULT_WIDTH,
 };

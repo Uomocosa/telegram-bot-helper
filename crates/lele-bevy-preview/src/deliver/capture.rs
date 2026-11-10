@@ -4,8 +4,6 @@ use atomic_delegate_macros::atomic_delegates;
 
 use crate::Error;
 use crate::deliver;
-use crate::deliver::basic::enums::Media;
-use crate::deliver::basic::enums::Status;
 use crate::preview;
 use crate::scene;
 
@@ -13,7 +11,7 @@ use crate::scene;
 pub struct Capture {
     pub path: PathBuf,
     pub artifact: deliver::Artifact,
-    pub status: Status,
+    pub status: deliver::Status,
 }
 
 #[atomic_delegates]
@@ -60,7 +58,7 @@ impl Capture {
 
 #[rustfmt::skip]
 impl Capture {
-    pub(crate) const fn telegram_media_kind(&self) -> telegram_bot_helper::MediaKind { match self.artifact.media { Media::Png => telegram_bot_helper::MediaKind::Photo, Media::Mp4 => telegram_bot_helper::MediaKind::Video } }
+    pub(crate) const fn telegram_media_kind(&self) -> telegram_bot_helper::MediaKind { match self.artifact.media { deliver::Media::Png => telegram_bot_helper::MediaKind::Photo, deliver::Media::Mp4 => telegram_bot_helper::MediaKind::Video } }
     pub(crate) fn is_mp4(&self) -> bool { self.path.extension().and_then(std::ffi::OsStr::to_str) == Some("mp4") }
 }
 

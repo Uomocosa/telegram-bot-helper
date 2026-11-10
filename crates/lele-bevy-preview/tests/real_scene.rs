@@ -3,10 +3,10 @@ use std::path::PathBuf;
 use bevy::prelude::*;
 use lele_bevy_preview::Report;
 use lele_bevy_preview::deliver::Artifact;
-use lele_bevy_preview::deliver::basic::enums::Status;
+use lele_bevy_preview::deliver::Status;
 use lele_bevy_preview::preview::Config;
 use lele_bevy_preview::scene::Scene;
-use lele_bevy_preview::scene::basic::structs::{State, Timeline};
+use lele_bevy_preview::scene::{State, Timeline};
 
 #[derive(Component)]
 struct Card;

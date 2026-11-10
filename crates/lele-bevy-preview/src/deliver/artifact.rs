@@ -5,7 +5,6 @@ use atomic_delegate_macros::atomic_delegates;
 use crate::Error;
 use crate::basic;
 use crate::deliver;
-use crate::deliver::basic::enums::Media;
 use crate::scene;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -14,7 +13,7 @@ pub struct Artifact {
     pub label: String,
     pub fingerprint: String,
     pub pixel_hash: String,
-    pub media: Media,
+    pub media: deliver::Media,
     pub kind: scene::Kind,
 }
 
@@ -63,7 +62,7 @@ impl Artifact {
 mod tests {
     use super::Artifact;
     use crate::deliver;
-    use crate::deliver::basic::enums::Media;
+    use crate::deliver::Media;
     use crate::scene;
 
     fn artifact(label: &str, pixel_hash: &str) -> Artifact {

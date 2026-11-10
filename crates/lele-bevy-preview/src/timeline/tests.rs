@@ -7,7 +7,7 @@ mod tests {
     use crate::preview;
     use crate::scene;
     use crate::scene::Scene;
-    use crate::scene::basic::structs::{State, Timeline};
+    use crate::scene::{State, Timeline};
 
     fn noop(_world: &mut World) {}
     fn spawn_visible_change(world: &mut World) {

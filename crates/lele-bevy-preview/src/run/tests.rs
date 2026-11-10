@@ -14,7 +14,7 @@ mod tests {
     use crate::preview;
     use crate::scene;
     use crate::scene::Scene;
-    use crate::scene::basic::structs::State;
+    use crate::scene::State;
 
     fn noop(_world: &mut World) {}
     fn noop_build(_app: &mut App) {}
