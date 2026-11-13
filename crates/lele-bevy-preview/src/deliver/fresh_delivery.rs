@@ -23,37 +23,8 @@ impl FreshDelivery {
 #[atomic_delegates]
 impl FreshDelivery {
     pub(crate) fn all_positions(&self) -> Vec<(usize, bool)> {}
-}
-
-#[rustfmt::skip]
-impl FreshDelivery {
-
-    pub(crate) fn chunk_refs<'a>(&'a self, chunk: &[(usize, bool)]) -> Vec<&'a deliver::Capture> {
-        chunk
-            .iter()
-            .filter_map(|(position, is_clip)| {
-                if *is_clip {
-                    self.clip.as_ref()
-                } else {
-                    self.captures.get(*position)
-                }
-            })
-            .collect()
-    }
-
-    pub(crate) fn chunk_is_sendable(&self, chunk: &[(usize, bool)]) -> bool {
-        chunk.iter().any(|(position, is_clip)| {
-            if *is_clip {
-                self.clip
-                    .as_ref()
-                    .is_some_and(deliver::Capture::is_sendable)
-            } else {
-                self.captures
-                    .get(*position)
-                    .is_some_and(deliver::Capture::is_sendable)
-            }
-        })
-    }
+    pub(crate) fn chunk_refs<'a>(&'a self, chunk: &[(usize, bool)]) -> Vec<&'a deliver::Capture> {}
+    pub(crate) fn chunk_is_sendable(&self, chunk: &[(usize, bool)]) -> bool {}
 }
 
 #[cfg(test)]

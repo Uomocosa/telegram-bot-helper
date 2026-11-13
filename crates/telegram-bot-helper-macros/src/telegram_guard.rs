@@ -2,9 +2,14 @@ use syn::ItemFn;
 
 pub struct TelegramGuard;
 
-#[rustfmt::skip]
 impl TelegramGuard {
-    pub(crate) fn insert_as_first_statement(fun: &mut ItemFn) { let name = fun.sig.ident.to_string(); fun.block.stmts.insert(0, syn::parse_quote! { let _telegram_guard = telegram_bot_helper::guard::Guard::from(#name); }); }
+    pub(crate) fn insert_as_first_statement(fun: &mut ItemFn) {
+        let name = fun.sig.ident.to_string();
+        fun.block.stmts.insert(
+            0,
+            syn::parse_quote! { let _telegram_guard = telegram_bot_helper::guard::Guard::from(#name); },
+        );
+    }
 }
 
 #[cfg(test)]

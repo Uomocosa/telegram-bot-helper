@@ -14,11 +14,7 @@ impl ApiResponse {
     pub fn result_value(&self) -> Result<Value, Error> {}
     pub fn rejection(&self) -> Error {}
     pub fn message_ids(&self) -> Result<Vec<String>, Error> {}
-}
-
-#[rustfmt::skip]
-impl ApiResponse {
-    pub fn message_id(&self) -> Result<String, Error> { Ok(self.result_value()?.get("message_id").and_then(Value::as_u64).map_or_else(|| "ok".to_string(), |id| id.to_string())) }
+    pub fn message_id(&self) -> Result<String, Error> {}
 }
 
 #[cfg(test)]

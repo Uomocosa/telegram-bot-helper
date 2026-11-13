@@ -38,14 +38,16 @@ impl Artifact {
         fps: u32,
     ) -> Result<deliver::Status, Error> {
     }
+    #[must_use]
+    pub fn unsent_path(&self, out_dir: &Path) -> std::path::PathBuf {}
+    #[must_use]
+    pub fn unsent_frames_dir(out_dir: &Path, scene: &str) -> std::path::PathBuf {}
 }
 
 #[rustfmt::skip]
 impl Artifact {
     #[must_use]
     pub fn delivered_path(&self, out_dir: &Path) -> std::path::PathBuf { out_dir.join(self.file_name()) }
-    #[must_use]
-    pub fn unsent_path(&self, out_dir: &Path) -> std::path::PathBuf { out_dir.join(basic::constants::UNSENT_DIR).join(self.file_name()) }
     #[must_use]
     pub fn locks_dir(out_dir: &Path) -> std::path::PathBuf { out_dir.join(basic::constants::LOCKS_DIR) }
     #[must_use]
@@ -54,8 +56,6 @@ impl Artifact {
     pub fn delivered_frames_dir(out_dir: &Path, scene: &str) -> std::path::PathBuf { out_dir.join(format!("{scene}_frames")) }
     #[must_use]
     pub fn staging_frames_dir(staging_root: &Path, scene: &str) -> std::path::PathBuf { staging_root.join(format!("{scene}_frames")) }
-    #[must_use]
-    pub fn unsent_frames_dir(out_dir: &Path, scene: &str) -> std::path::PathBuf { out_dir.join(basic::constants::UNSENT_DIR).join(format!("{scene}_frames")) }
 }
 
 #[cfg(test)]

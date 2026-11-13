@@ -11,7 +11,6 @@ pub enum Kind {
     App,
 }
 
-#[rustfmt::skip]
 impl Kind {
     #[must_use]
     pub const fn tag(self) -> &'static str {

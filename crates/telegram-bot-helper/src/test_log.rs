@@ -20,9 +20,17 @@ impl TestLog {
     pub fn line(&self, message: &str) {}
 }
 
-#[rustfmt::skip]
 impl TestLog {
-    pub(crate) fn append_if_open(&self, stamped: &str) { if let Some(file) = self.file.lock().unwrap_or_else(std::sync::PoisonError::into_inner).as_mut() { let _ = writeln!(file, "{stamped}"); } }
+    pub(crate) fn append_if_open(&self, stamped: &str) {
+        if let Some(file) = self
+            .file
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .as_mut()
+        {
+            let _ = writeln!(file, "{stamped}");
+        }
+    }
 }
 
 #[cfg(test)]

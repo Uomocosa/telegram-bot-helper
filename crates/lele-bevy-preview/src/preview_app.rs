@@ -35,9 +35,12 @@ impl PreviewApp {
     }
 }
 
-#[rustfmt::skip]
 impl PreviewApp {
-    pub fn warmup(&mut self) { for _ in 0..self.config.warmup_frames { self.app.update(); } }
+    pub fn warmup(&mut self) {
+        for _ in 0..self.config.warmup_frames {
+            self.app.update();
+        }
+    }
 }
 
 #[atomic_delegates]
@@ -58,12 +61,15 @@ impl PreviewApp {
     ) -> Handle<Image> {
     }
     pub(crate) fn offscreen_image(width: u32, height: u32) -> Image {}
+    pub(crate) fn register_window_messages(app: &mut App) {}
 }
 
-#[rustfmt::skip]
 impl PreviewApp {
-    pub(crate) fn drain_in_flight_screenshot(&mut self) { for _ in 0..basic::constants::PUMP_FRAMES { self.app.update(); } }
-    pub(crate) fn register_window_messages(app: &mut App) { app.add_message::<bevy::window::WindowEvent>() .add_message::<bevy::window::WindowResized>() .add_message::<bevy::window::WindowCreated>() .add_message::<bevy::window::WindowClosing>() .add_message::<bevy::window::WindowClosed>() .add_message::<bevy::window::WindowCloseRequested>() .add_message::<bevy::window::WindowDestroyed>() .add_message::<bevy::window::WindowFocused>() .add_message::<bevy::window::WindowOccluded>() .add_message::<bevy::window::WindowScaleFactorChanged>() .add_message::<bevy::window::WindowBackendScaleFactorChanged>() .add_message::<bevy::window::WindowMoved>() .add_message::<bevy::window::WindowThemeChanged>() .add_message::<bevy::window::Ime>(); }
+    pub(crate) fn drain_in_flight_screenshot(&mut self) {
+        for _ in 0..basic::constants::PUMP_FRAMES {
+            self.app.update();
+        }
+    }
 }
 
 #[cfg(test)]

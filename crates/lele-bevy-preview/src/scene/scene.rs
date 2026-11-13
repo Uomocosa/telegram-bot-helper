@@ -83,10 +83,6 @@ impl Scene {
     ) {
     }
     pub(crate) fn clip_hash(fps: u32, frame_hashes: &[String]) -> String {}
-}
-
-#[rustfmt::skip]
-impl Scene {
     pub(crate) fn stash_positions_to_unsent(
         &self,
         fresh: &mut deliver::FreshDelivery,
@@ -94,25 +90,7 @@ impl Scene {
         config: &preview::Config,
         staging_root: &std::path::Path,
     ) {
-        for (position, is_clip) in positions {
-            if *is_clip {
-                if let Some(clip) = fresh.clip.as_mut() {
-                    let _ = clip.stash_staged_to_unsent(
-                        &config.out_dir,
-                        &self.name,
-                        staging_root,
-                    );
-                }
-            } else if let Some(capture) = fresh.captures.get_mut(*position) {
-                let _ = capture.stash_staged_to_unsent(
-                    &config.out_dir,
-                    &self.name,
-                    staging_root,
-                );
-            }
-        }
     }
-
     pub(crate) fn settle_positions_sent(
         &self,
         fresh: &mut deliver::FreshDelivery,
@@ -121,27 +99,7 @@ impl Scene {
         staging_root: &std::path::Path,
         resend_all: bool,
     ) {
-        for (position, is_clip) in positions {
-            if *is_clip {
-                if let Some(clip) = fresh.clip.as_mut() {
-                    let _ = clip.promote_staged_to_delivered(
-                        &config.out_dir,
-                        &self.name,
-                        staging_root,
-                        resend_all,
-                    );
-                }
-            } else if let Some(capture) = fresh.captures.get_mut(*position) {
-                let _ = capture.promote_staged_to_delivered(
-                    &config.out_dir,
-                    &self.name,
-                    staging_root,
-                    resend_all,
-                );
-            }
-        }
     }
-
     pub(crate) fn drop_positions_staged(
         &self,
         fresh: &mut deliver::FreshDelivery,
@@ -149,21 +107,6 @@ impl Scene {
         config: &preview::Config,
         staging_root: &std::path::Path,
     ) {
-        for (position, is_clip) in positions {
-            if *is_clip {
-                if let Some(clip) = fresh.clip.as_mut() {
-                    clip.drop_staged_file(staging_root, &self.name);
-                    let delivered = clip.artifact.delivered_path(&config.out_dir);
-                    clip.path.clone_from(&delivered);
-                    clip.clear_unsent_entry(&config.out_dir, &self.name);
-                }
-            } else if let Some(capture) = fresh.captures.get_mut(*position) {
-                capture.drop_staged_file(staging_root, &self.name);
-                let delivered = capture.artifact.delivered_path(&config.out_dir);
-                capture.path.clone_from(&delivered);
-                capture.clear_unsent_entry(&config.out_dir, &self.name);
-            }
-        }
     }
 }
 
