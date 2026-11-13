@@ -53,10 +53,51 @@ pub fn stash_staged_to_unsent(
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::stash_staged_to_unsent;
+    use crate::deliver;
+    use crate::scene;
+
+    fn artifact(scene: &str, label: &str, pixel_hash: &str) -> deliver::Artifact {
+        deliver::Artifact {
+            scene: String::from(scene),
+            label: String::from(label),
+            fingerprint: deliver::Artifact::fingerprint_of(scene, label),
+            pixel_hash: String::from(pixel_hash),
+            media: deliver::Media::Png,
+            kind: scene::Kind::System,
+        }
+    }
+
+    fn capture(path: PathBuf, status: deliver::Status) -> deliver::Capture {
+        deliver::Capture {
+            path,
+            artifact: artifact("ui", "rest", "hash"),
+            status,
+        }
+    }
 
     #[test]
     fn test_usage() {
-        let _ = stash_staged_to_unsent;
+        let dir = tempfile::tempdir().unwrap();
+        let out = dir.path().join("out");
+        let staging = dir.path().join("staging");
+        std::fs::create_dir_all(&staging).unwrap();
+
+        let mut changed = capture(staging.join("ui__rest.png"), deliver::Status::Changed);
+        std::fs::write(&changed.path, b"changed").unwrap();
+        stash_staged_to_unsent(&mut changed, &out, "ui", &staging).unwrap();
+        let unsent = changed.artifact.unsent_path(&out);
+        assert!(unsent.is_file());
+        assert_eq!(changed.path, unsent);
+        assert!(!staging.join("ui__rest.png").exists());
+
+        let mut same = capture(staging.join("ui__rest.png"), deliver::Status::Same);
+        std::fs::write(&same.path, b"same").unwrap();
+        stash_staged_to_unsent(&mut same, &out, "ui", &staging).unwrap();
+        assert_eq!(same.path, same.artifact.delivered_path(&out));
+        assert!(!staging.join("ui__rest.png").exists());
+        assert!(!same.artifact.delivered_path(&out).exists());
     }
 }

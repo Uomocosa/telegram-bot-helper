@@ -55,15 +55,22 @@ pub fn send_photo(bot: &TelegramBot, bytes: &[u8], caption: &Caption) -> Result<
 mod tests {
     use super::send_photo;
     use crate::Caption;
+    use crate::Error;
     use crate::TelegramBot;
+
+    fn bot() -> TelegramBot {
+        TelegramBot {
+            token: String::from("123:test"),
+            chat_id: String::from("1"),
+        }
+    }
 
     #[test]
     fn test_usage() {
-        let bot = TelegramBot {
-            token: "token".to_string(),
-            chat_id: "chat".to_string(),
-        };
-        assert!(send_photo(&bot, &[], &Caption::from("caption")).is_err());
-        let _ = send_photo;
+        let caption = Caption::from("preview");
+        assert!(matches!(
+            send_photo(&bot(), &[], &caption),
+            Err(Error::EmptyPayload { op: "send_photo" })
+        ));
     }
 }

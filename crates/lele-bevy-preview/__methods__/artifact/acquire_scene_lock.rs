@@ -20,9 +20,16 @@ pub fn acquire_scene_lock(out_dir: &Path, scene: &str) -> Result<std::fs::File, 
 #[cfg(test)]
 mod tests {
     use super::acquire_scene_lock;
+    use crate::deliver;
 
     #[test]
     fn test_usage() {
-        let _ = acquire_scene_lock;
+        let dir = tempfile::tempdir().unwrap();
+        let out = dir.path().join("previews");
+        let first = acquire_scene_lock(&out, "ui").unwrap();
+        assert!(deliver::Artifact::lock_path(&out, "ui").is_file());
+        drop(first);
+        let second = acquire_scene_lock(&out, "ui");
+        assert!(second.is_ok());
     }
 }

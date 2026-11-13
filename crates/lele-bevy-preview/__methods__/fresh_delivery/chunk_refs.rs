@@ -18,15 +18,39 @@ pub fn chunk_refs<'a>(
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::chunk_refs;
     use crate::deliver;
+    use crate::scene;
+
+    fn capture(label: &str) -> deliver::Capture {
+        deliver::Capture {
+            path: PathBuf::from(format!("{label}.png")),
+            artifact: deliver::Artifact {
+                scene: String::from("ui"),
+                label: String::from(label),
+                fingerprint: deliver::Artifact::fingerprint_of("ui", label),
+                pixel_hash: String::from("hash"),
+                media: deliver::Media::Png,
+                kind: scene::Kind::System,
+            },
+            status: deliver::Status::New,
+        }
+    }
 
     #[test]
     fn test_usage() {
         let fresh = deliver::FreshDelivery {
-            captures: Vec::new(),
-            clip: None,
+            captures: vec![capture("a"), capture("b")],
+            clip: Some(capture("clip")),
         };
-        assert_eq!(chunk_refs(&fresh, &[(0, false), (0, true)]).len(), 0);
+        let refs = chunk_refs(&fresh, &[(1, false), (0, true), (5, false)]);
+        let labels: Vec<&str> = refs
+            .iter()
+            .map(|item| item.artifact.label.as_str())
+            .collect();
+        assert_eq!(labels, vec!["b", "clip"]);
+        assert_eq!(chunk_refs(&fresh, &[]), Vec::<&deliver::Capture>::new());
     }
 }

@@ -38,5 +38,6 @@ string_slice = "deny"
 unimplemented = "deny"
 todo = "deny"
 unreachable = "deny"
+# scene/scene.rs holds the Scene struct while scene/ holds its states, timeline and validation; the atomic-file rule names a type's file after the type, so this collision is structural.
 module_inception = "allow"
 missing_errors_doc = "allow"

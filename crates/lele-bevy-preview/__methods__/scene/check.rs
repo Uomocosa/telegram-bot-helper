@@ -32,10 +32,42 @@ pub fn check(scene: &scene::Scene) -> Result<(), Error> {
 
 #[cfg(test)]
 mod tests {
+    use bevy::ecs::world::World;
+    use bevy::prelude::App;
+
     use super::check;
+    use crate::Error;
+    use crate::scene;
+
+    fn noop_world(_world: &mut World) {}
+    fn noop_build(_app: &mut App) {}
+
+    fn scene_with(name: &str, labels: &[&str]) -> scene::Scene {
+        scene::Scene {
+            name: String::from(name),
+            kind: scene::Kind::System,
+            build: noop_build,
+            states: labels
+                .iter()
+                .map(|label| scene::State {
+                    label: String::from(*label),
+                    apply: noop_world,
+                })
+                .collect(),
+            timeline: None,
+        }
+    }
 
     #[test]
     fn test_usage() {
-        let _ = check;
+        assert!(check(&scene_with("ui", &["rest"])).is_ok());
+        assert!(matches!(
+            check(&scene_with("ui", &[])),
+            Err(Error::Scene(_))
+        ));
+        assert!(matches!(
+            check(&scene_with("  ", &["rest"])),
+            Err(Error::Scene(_))
+        ));
     }
 }

@@ -30,34 +30,74 @@ pub fn drop_positions_staged(
 
 #[cfg(test)]
 mod tests {
+    use std::path::{Path, PathBuf};
+
     use super::drop_positions_staged;
     use crate::deliver;
     use crate::preview;
     use crate::scene;
-    use std::path::Path;
 
-    #[test]
-    fn test_usage() {
-        let owner = scene::Scene {
-            name: String::from("ui"),
+    fn scene_named(name: &str) -> scene::Scene {
+        scene::Scene {
+            name: String::from(name),
             kind: scene::Kind::System,
             build: |_app| {},
             states: Vec::new(),
             timeline: None,
-        };
-        let config = preview::Config::default();
+        }
+    }
+
+    fn capture(path: PathBuf, label: &str, status: deliver::Status) -> deliver::Capture {
+        deliver::Capture {
+            path,
+            artifact: deliver::Artifact {
+                scene: String::from("ui"),
+                label: String::from(label),
+                fingerprint: deliver::Artifact::fingerprint_of("ui", label),
+                pixel_hash: String::from("hash"),
+                media: deliver::Media::Png,
+                kind: scene::Kind::System,
+            },
+            status,
+        }
+    }
+
+    #[test]
+    fn test_usage() {
+        let dir = tempfile::tempdir().unwrap();
+        let out = dir.path().join("out");
+        let staging = dir.path().join("staging");
+        std::fs::create_dir_all(&staging).unwrap();
+        let shot = staging.join("ui__rest.png");
+        let clip_shot = staging.join("ui__clip.png");
+        std::fs::write(&shot, b"shot").unwrap();
+        std::fs::write(&clip_shot, b"clip").unwrap();
         let mut fresh = deliver::FreshDelivery {
-            captures: Vec::new(),
-            clip: None,
+            captures: vec![capture(shot.clone(), "rest", deliver::Status::Changed)],
+            clip: Some(capture(clip_shot.clone(), "clip", deliver::Status::Changed)),
+        };
+        let unsent = fresh.captures[0].artifact.unsent_path(&out);
+        std::fs::create_dir_all(unsent.parent().unwrap()).unwrap();
+        std::fs::write(&unsent, b"stale").unwrap();
+        let config = preview::Config {
+            out_dir: out.clone(),
+            ..preview::Config::default()
         };
         drop_positions_staged(
-            &owner,
+            &scene_named("ui"),
             &mut fresh,
             &[(0, false), (0, true)],
             &config,
-            Path::new("staging"),
+            Path::new(&staging),
         );
-        assert_eq!(fresh.captures.len(), 0);
-        assert!(fresh.clip.is_none());
+        assert!(!shot.exists());
+        assert!(!clip_shot.exists());
+        assert!(!unsent.exists());
+        assert_eq!(
+            fresh.captures[0].path,
+            fresh.captures[0].artifact.delivered_path(&out)
+        );
+        let clip = fresh.clip.as_ref().unwrap();
+        assert_eq!(clip.path, clip.artifact.delivered_path(&out));
     }
 }

@@ -33,10 +33,40 @@ pub fn collect(
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::collect;
+    use crate::deliver;
+    use crate::preview;
+    use crate::scene;
 
     #[test]
     fn test_usage() {
-        let _ = collect;
+        let dir = tempfile::tempdir().unwrap();
+        let rendered = vec![preview::RenderedState {
+            path: PathBuf::from("staging/rest.png"),
+            label: String::from("rest"),
+            pixel_hash: String::from("unused"),
+        }];
+        let fresh = collect("ui", scene::Kind::System, &rendered, dir.path()).unwrap();
+        assert_eq!(fresh.len(), 1);
+        assert_eq!(fresh[0].status, deliver::Status::New);
+        assert_eq!(fresh[0].artifact.fingerprint, "ui|rest");
+        assert_eq!(fresh[0].path, PathBuf::from("staging/rest.png"));
+
+        let baseline = {
+            let delivered = fresh[0].artifact.delivered_path(dir.path());
+            image::RgbaImage::from_pixel(4, 4, image::Rgba([7, 7, 7, 255]))
+                .save(&delivered)
+                .unwrap();
+            deliver::Artifact::hash_png_pixels(&delivered).unwrap()
+        };
+        let matching = vec![preview::RenderedState {
+            path: PathBuf::from("staging/rest.png"),
+            label: String::from("rest"),
+            pixel_hash: baseline,
+        }];
+        let same = collect("ui", scene::Kind::System, &matching, dir.path()).unwrap();
+        assert_eq!(same[0].status, deliver::Status::Same);
     }
 }

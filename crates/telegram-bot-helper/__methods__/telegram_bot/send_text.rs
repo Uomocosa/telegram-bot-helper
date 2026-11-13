@@ -43,15 +43,21 @@ pub fn send_text(bot: &TelegramBot, text: &str) -> Result<String, Error> {
 #[cfg(test)]
 mod tests {
     use super::send_text;
+    use crate::Error;
     use crate::TelegramBot;
+
+    fn bot() -> TelegramBot {
+        TelegramBot {
+            token: String::from("123:test"),
+            chat_id: String::from("1"),
+        }
+    }
 
     #[test]
     fn test_usage() {
-        let bot = TelegramBot {
-            token: "token".to_string(),
-            chat_id: "chat".to_string(),
-        };
-        assert!(send_text(&bot, "").is_err());
-        let _ = send_text;
+        assert!(matches!(
+            send_text(&bot(), ""),
+            Err(Error::EmptyPayload { op: "send_text" })
+        ));
     }
 }

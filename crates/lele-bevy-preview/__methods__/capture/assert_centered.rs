@@ -25,10 +25,55 @@ pub fn assert_centered(capture: &deliver::Capture, tolerance: u32) -> Result<(),
 
 #[cfg(test)]
 mod tests {
+    use std::path::{Path, PathBuf};
+
     use super::assert_centered;
+    use crate::Error;
+    use crate::deliver;
+    use crate::scene;
+
+    fn artifact(scene: &str, label: &str, pixel_hash: &str) -> deliver::Artifact {
+        deliver::Artifact {
+            scene: String::from(scene),
+            label: String::from(label),
+            fingerprint: deliver::Artifact::fingerprint_of(scene, label),
+            pixel_hash: String::from(pixel_hash),
+            media: deliver::Media::Png,
+            kind: scene::Kind::System,
+        }
+    }
+
+    fn dot(path: &Path, x: u32, y: u32) {
+        let mut image = image::RgbaImage::from_pixel(10, 10, image::Rgba([255, 255, 255, 255]));
+        image.put_pixel(x, y, image::Rgba([0, 0, 0, 255]));
+        image.save(path).unwrap();
+    }
+
+    fn capture(path: PathBuf) -> deliver::Capture {
+        deliver::Capture {
+            path,
+            artifact: artifact("ui", "rest", "hash"),
+            status: deliver::Status::New,
+        }
+    }
 
     #[test]
     fn test_usage() {
-        let _ = assert_centered;
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("shot.png");
+        dot(&path, 5, 5);
+        assert!(assert_centered(&capture(path.clone()), 0).is_ok());
+        dot(&path, 1, 1);
+        assert!(matches!(
+            assert_centered(&capture(path), 0),
+            Err(Error::NotCentered {
+                x: 1,
+                y: 1,
+                expected_x: 5,
+                expected_y: 5,
+                tolerance: 0,
+                ..
+            })
+        ));
     }
 }
