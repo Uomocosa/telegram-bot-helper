@@ -10,3 +10,8 @@ exclude = ["target", ".devenv", ".git"]
 declared_honest = []
 declared_dishonest = ["std::time::SystemTime::now", "std::time::Instant::now", "std::env::var", "std::fs::read", "std::fs::write", "std::fs::remove_file", "std::process::Command::new"]
 
+
+[[lele.lint.inline_trait_methods]]
+trait   = "bevy::app::Plugin"
+methods = ["build", "ready", "finish", "cleanup"]
+reason  = "plugin lifecycle methods are the plugin's wiring; read them next to the plugin struct"

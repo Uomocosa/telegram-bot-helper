@@ -1,4 +1,4 @@
-use crate::TelegramBot;
+use atomic_delegate_macros::atomic_delegates;
 
 pub struct Guard {
     pub name: String,
@@ -14,19 +14,9 @@ impl From<&str> for Guard {
     }
 }
 
+#[atomic_delegates]
 impl Drop for Guard {
-    fn drop(&mut self) {
-        if !TelegramBot::is_status_reporting_enabled() {
-            return;
-        }
-        let status = if std::thread::panicking() {
-            "FAILED"
-        } else {
-            "PASSED"
-        };
-        let text = format!("{} {} in {:?}", status, self.name, self.start.elapsed());
-        TelegramBot::send_text_best_effort(&text);
-    }
+    fn drop(&mut self) {}
 }
 
 #[cfg(test)]
