@@ -59,6 +59,7 @@ impl Scene {
         fresh: &mut deliver::FreshDelivery,
         config: &preview::Config,
         staging_root: &std::path::Path,
+        log: &deliver::DeliveryLog,
     ) -> Result<usize, Error> {
     }
     pub(crate) fn check_timeline(&self) -> Result<(), Error> {}

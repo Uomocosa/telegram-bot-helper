@@ -979,5 +979,111 @@ mod tests {
         }
         no_staging_left(dir.path());
     }
+    #[test]
+    fn test_delivery_log_records_one_decision_per_capture() {
+        let dir = tempfile::tempdir().unwrap();
+        write_delivered(dir.path(), "ui", "one", 1, 2, 3);
+        write_delivered(dir.path(), "ui", "two", 4, 5, 6);
+        let staged_one = staging_capture(
+            dir.path(),
+            "ui",
+            "one",
+            90,
+            90,
+            90,
+            deliver::Status::Changed,
+        );
+        let staged_two = staging_capture(
+            dir.path(),
+            "ui",
+            "two",
+            91,
+            91,
+            91,
+            deliver::Status::Changed,
+        );
+        let mut report = Report {
+            captures: vec![staged_one, staged_two],
+            clip: None,
+        };
+        let scene_obj = scene_for("ui");
+        let cfg = config_with(dir.path(), recording_send);
+        let sent = scene_obj.deliver_report(&mut report, &cfg).unwrap();
+        assert_eq!(sent, 2);
+        let text = std::fs::read_to_string(dir.path().join("_log").join("deliveries.log")).unwrap();
+        let decisions: Vec<&str> = text
+            .lines()
+            .filter(|line| line.contains("event=decision"))
+            .collect();
+        assert_eq!(
+            decisions.len(),
+            2,
+            "one decision per capture: {decisions:?}"
+        );
+        assert!(decisions.iter().any(|line| line.contains("label=one")));
+        assert!(decisions.iter().any(|line| line.contains("label=two")));
+        assert!(text.contains("event=send"));
+        no_staging_left(dir.path());
+    }
+
+    #[test]
+    fn test_delivery_log_flags_unchanged_image_sent_in_album() {
+        let dir = tempfile::tempdir().unwrap();
+        write_delivered(dir.path(), "ui", "one", 50, 60, 70);
+        write_delivered(dir.path(), "ui", "two", 1, 2, 3);
+        let staged_same =
+            staging_capture(dir.path(), "ui", "one", 50, 60, 70, deliver::Status::Same);
+        let staged_changed = staging_capture(
+            dir.path(),
+            "ui",
+            "two",
+            90,
+            90,
+            90,
+            deliver::Status::Changed,
+        );
+        let mut report = Report {
+            captures: vec![staged_same, staged_changed],
+            clip: None,
+        };
+        let scene_obj = scene_for("ui");
+        let cfg = config_with(dir.path(), recording_send);
+        let sent = scene_obj.deliver_report(&mut report, &cfg).unwrap();
+        assert_eq!(sent, 2);
+        let text = std::fs::read_to_string(dir.path().join("_log").join("deliveries.log")).unwrap();
+        assert!(
+            text.lines()
+                .any(|line| line.contains("event=sent_unchanged")
+                    && line.contains("label=one")
+                    && line.contains("why=album_with_changed_sibling")),
+            "Same image sent in an album must be flagged: {text}"
+        );
+        no_staging_left(dir.path());
+    }
+
+    #[test]
+    fn test_delivery_log_write_failure_does_not_fail_delivery() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("_log"), b"not-a-directory").unwrap();
+        write_delivered(dir.path(), "ui", "one", 1, 2, 3);
+        let staged = staging_capture(
+            dir.path(),
+            "ui",
+            "one",
+            90,
+            90,
+            90,
+            deliver::Status::Changed,
+        );
+        let mut report = Report {
+            captures: vec![staged],
+            clip: None,
+        };
+        let scene_obj = scene_for("ui");
+        let cfg = config_with(dir.path(), recording_send);
+        let sent = scene_obj.deliver_report(&mut report, &cfg).unwrap();
+        assert_eq!(sent, 1, "unwritable log must never fail a delivery");
+        no_staging_left(dir.path());
+    }
     // no test_usage necessary
 }

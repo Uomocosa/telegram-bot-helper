@@ -2,6 +2,7 @@ pub mod artifact;
 pub mod bounds;
 pub mod capture;
 pub mod captured_image;
+pub mod delivery_log;
 pub mod drift_tolerance;
 pub mod fresh_delivery;
 pub mod kind;

@@ -10,6 +10,7 @@ pub fn send_fresh_delivery_and_record(
     fresh: &mut deliver::FreshDelivery,
     config: &preview::Config,
     staging_root: &std::path::Path,
+    log: &deliver::DeliveryLog,
 ) -> Result<usize, Error> {
     let mut order = Vec::with_capacity(
         fresh
@@ -40,6 +41,21 @@ pub fn send_fresh_delivery_and_record(
         }
         let refs = fresh.chunk_refs(chunk);
         let send_result = (config.send_preview_group)(&refs, &caption);
+        log.record_send(chunk_index, &refs, resend_all, &send_result);
+        if let Ok(sent) = &send_result
+            && *sent > 0
+        {
+            for capture in &refs {
+                if !capture.is_sendable() {
+                    let why = if resend_all {
+                        "resend_all"
+                    } else {
+                        "album_with_changed_sibling"
+                    };
+                    log.record_sent_unchanged(capture, why);
+                }
+            }
+        }
         drop(refs);
         match send_result {
             Ok(0) => {

@@ -11,6 +11,7 @@ pub fn deliver_report(
 ) -> Result<usize, Error> {
     let staging_root = deliver::Artifact::staging_root(&config.out_dir, &scene.name);
     let _held = deliver::Artifact::acquire_scene_lock(&config.out_dir, &scene.name)?;
+    let log = deliver::DeliveryLog::from_out_dir_and_scene(&config.out_dir, &scene.name);
     let fps = match scene.timeline.as_ref() {
         Some(spec) => spec.fps,
         None if report.clip.is_some() => {
@@ -34,6 +35,18 @@ pub fn deliver_report(
             return Err(error);
         }
     };
+    for (index, capture) in fresh.captures.iter().enumerate() {
+        let reason = fresh
+            .reasons
+            .get(index)
+            .copied()
+            .unwrap_or(deliver::Reason::NoBaseline);
+        let diff = fresh.diffs.get(index).and_then(|found| found.as_ref());
+        log.record_decision(capture, reason, diff);
+    }
+    if let (Some(clip), Some(reason)) = (fresh.clip.as_ref(), fresh.clip_reason) {
+        log.record_decision(clip, reason, None);
+    }
     for (slot, capture) in report.captures.iter_mut().zip(fresh.captures.iter()) {
         slot.status = capture.status;
     }
@@ -42,6 +55,7 @@ pub fn deliver_report(
     }
     let dry = std::env::var("LELE_PREVIEW_DRY_RUN").is_ok_and(|flag| flag == "1");
     if dry {
+        log.record_skip("dry_run");
         let positions = fresh.all_positions();
         scene.stash_positions_to_unsent(&mut fresh, &positions, config, &staging_root);
         report.sync_paths_from_fresh(&fresh);
@@ -55,13 +69,14 @@ pub fn deliver_report(
         .any(deliver::Capture::is_sendable);
     let resend = deliver::Capture::is_resend_all_requested();
     if !resend && !sendable {
+        log.record_skip("nothing_sendable");
         let positions = fresh.all_positions();
         scene.drop_positions_staged(&mut fresh, &positions, config, &staging_root);
         report.sync_paths_from_fresh(&fresh);
         let _ = std::fs::remove_dir_all(&staging_root);
         return Ok(0);
     }
-    let sent = match scene.send_fresh_delivery_and_record(&mut fresh, config, &staging_root) {
+    let sent = match scene.send_fresh_delivery_and_record(&mut fresh, config, &staging_root, &log) {
         Ok(sent) => sent,
         Err(error) => {
             report.sync_paths_from_fresh(&fresh);
