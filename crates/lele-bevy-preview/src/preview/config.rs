@@ -15,6 +15,7 @@ pub struct Config {
     pub lead_in_frames: u32,
     pub max_capture_frames: u32,
     pub min_distinct_colors: usize,
+    pub drift: deliver::DriftTolerance,
     pub out_dir: PathBuf,
     pub send_preview_group: fn(&[&deliver::Capture], &str) -> Result<usize, Error>,
 }
@@ -28,6 +29,7 @@ impl Default for Config {
             lead_in_frames: DEFAULT_LEAD_IN_FRAMES,
             max_capture_frames: DEFAULT_MAX_CAPTURE_FRAMES,
             min_distinct_colors: DEFAULT_MIN_DISTINCT_COLORS,
+            drift: deliver::DriftTolerance::default(),
             out_dir: PathBuf::from("ui_preview"),
             send_preview_group: deliver::Capture::send_group,
         }

@@ -22,14 +22,18 @@ pub fn deliver_report(
         }
         None => 0,
     };
-    let mut fresh =
-        match deliver::FreshDelivery::try_from_report_and_baseline(report, &config.out_dir, fps) {
-            Ok(fresh) => fresh,
-            Err(error) => {
-                let _ = std::fs::remove_dir_all(&staging_root);
-                return Err(error);
-            }
-        };
+    let mut fresh = match deliver::FreshDelivery::try_from_report_and_baseline(
+        report,
+        &config.out_dir,
+        fps,
+        &config.drift,
+    ) {
+        Ok(fresh) => fresh,
+        Err(error) => {
+            let _ = std::fs::remove_dir_all(&staging_root);
+            return Err(error);
+        }
+    };
     for (slot, capture) in report.captures.iter_mut().zip(fresh.captures.iter()) {
         slot.status = capture.status;
     }

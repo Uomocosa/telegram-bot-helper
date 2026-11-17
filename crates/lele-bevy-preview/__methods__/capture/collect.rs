@@ -10,6 +10,7 @@ pub fn collect(
     kind: scene::Kind,
     rendered: &[preview::RenderedState],
     out_dir: &Path,
+    drift: &deliver::DriftTolerance,
 ) -> Result<Vec<deliver::Capture>, Error> {
     let mut captures = Vec::new();
     for state in rendered {
@@ -21,7 +22,7 @@ pub fn collect(
             media: deliver::Media::Png,
             kind,
         };
-        let status = artifact.status_against_baseline(out_dir)?;
+        let status = artifact.status_against_baseline(out_dir, &state.path, drift)?;
         captures.push(deliver::Capture {
             path: state.path.clone(),
             artifact,
@@ -48,7 +49,14 @@ mod tests {
             label: String::from("rest"),
             pixel_hash: String::from("unused"),
         }];
-        let fresh = collect("ui", scene::Kind::System, &rendered, dir.path()).unwrap();
+        let fresh = collect(
+            "ui",
+            scene::Kind::System,
+            &rendered,
+            dir.path(),
+            &deliver::DriftTolerance::default(),
+        )
+        .unwrap();
         assert_eq!(fresh.len(), 1);
         assert_eq!(fresh[0].status, deliver::Status::New);
         assert_eq!(fresh[0].artifact.fingerprint, "ui|rest");
@@ -66,7 +74,14 @@ mod tests {
             label: String::from("rest"),
             pixel_hash: baseline,
         }];
-        let same = collect("ui", scene::Kind::System, &matching, dir.path()).unwrap();
+        let same = collect(
+            "ui",
+            scene::Kind::System,
+            &matching,
+            dir.path(),
+            &deliver::DriftTolerance::default(),
+        )
+        .unwrap();
         assert_eq!(same[0].status, deliver::Status::Same);
     }
 }

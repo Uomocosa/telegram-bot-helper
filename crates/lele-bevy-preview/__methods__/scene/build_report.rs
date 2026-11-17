@@ -10,7 +10,13 @@ pub fn build_report(scene: &scene::Scene, config: &preview::Config) -> Result<Re
     let _ = std::fs::remove_dir_all(&staging_root);
     std::fs::create_dir_all(&staging_root).map_err(Error::Io)?;
     let rendered = scene.render_states(config, &staging_root)?;
-    let captures = deliver::Capture::collect(&scene.name, scene.kind, &rendered, &config.out_dir)?;
+    let captures = deliver::Capture::collect(
+        &scene.name,
+        scene.kind,
+        &rendered,
+        &config.out_dir,
+        &config.drift,
+    )?;
     let clip = scene.build_clip(config, &staging_root)?;
     Ok(Report { captures, clip })
 }

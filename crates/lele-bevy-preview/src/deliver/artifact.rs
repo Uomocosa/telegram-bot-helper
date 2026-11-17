@@ -29,13 +29,21 @@ impl Artifact {
     pub fn file_name(&self) -> String {}
     pub fn hash_png_pixels(path: &Path) -> Result<String, Error> {}
     #[must_use]
+    pub fn is_exact_comparison_requested() -> bool {}
+    #[must_use]
     pub fn staging_root(out_dir: &Path, scene: &str) -> std::path::PathBuf {}
     pub fn acquire_scene_lock(out_dir: &Path, scene: &str) -> Result<std::fs::File, Error> {}
-    pub fn status_against_baseline(&self, out_dir: &Path) -> Result<deliver::Status, Error> {}
     pub fn clip_status_against_baseline(
         &self,
         out_dir: &Path,
         fps: u32,
+    ) -> Result<deliver::Status, Error> {
+    }
+    pub fn status_against_baseline(
+        &self,
+        out_dir: &Path,
+        new_image_path: &Path,
+        drift: &deliver::DriftTolerance,
     ) -> Result<deliver::Status, Error> {
     }
     #[must_use]
@@ -56,6 +64,18 @@ impl Artifact {
     pub fn delivered_frames_dir(out_dir: &Path, scene: &str) -> std::path::PathBuf { out_dir.join(format!("{scene}_frames")) }
     #[must_use]
     pub fn staging_frames_dir(staging_root: &Path, scene: &str) -> std::path::PathBuf { staging_root.join(format!("{scene}_frames")) }
+}
+
+#[atomic_delegates]
+impl Artifact {
+    pub(crate) fn status_against_baseline_with(
+        &self,
+        out_dir: &Path,
+        new_image_path: &Path,
+        drift: &deliver::DriftTolerance,
+        is_exact: bool,
+    ) -> Result<deliver::Status, Error> {
+    }
 }
 
 #[cfg(test)]
@@ -83,7 +103,13 @@ mod tests {
         assert_eq!(artifact.file_name(), "ui__one_room.png");
         let dir = tempfile::tempdir().unwrap();
         assert_eq!(
-            artifact.status_against_baseline(dir.path()).unwrap(),
+            artifact
+                .status_against_baseline(
+                    dir.path(),
+                    &dir.path().join("missing.png"),
+                    &deliver::DriftTolerance::default()
+                )
+                .unwrap(),
             deliver::Status::New
         );
         assert_eq!(artifact.fingerprint, "ui|one room");

@@ -16,6 +16,7 @@ impl FreshDelivery {
         report: &Report,
         out_dir: &std::path::Path,
         fps: u32,
+        drift: &deliver::DriftTolerance,
     ) -> Result<Self, Error> {
     }
 }

@@ -63,7 +63,9 @@ mod tests {
         let current = artifact("ui", "rest", &hash);
         std::fs::remove_file(&path).unwrap();
         assert_eq!(
-            current.status_against_baseline(dir.path()).unwrap(),
+            current
+                .status_against_baseline(dir.path(), &path, &deliver::DriftTolerance::default())
+                .unwrap(),
             deliver::Status::New
         );
     }
@@ -72,8 +74,11 @@ mod tests {
     fn test_usage_missing_preview_file_is_new() {
         let dir = tempfile::tempdir().unwrap();
         let current = artifact("ui", "rest", "0123456789abcdef");
+        let missing = dir.path().join("missing.png");
         assert_eq!(
-            current.status_against_baseline(dir.path()).unwrap(),
+            current
+                .status_against_baseline(dir.path(), &missing, &deliver::DriftTolerance::default())
+                .unwrap(),
             deliver::Status::New
         );
     }
@@ -85,7 +90,9 @@ mod tests {
         let hash = solid_png(&path, 20, 30, 40);
         let current = artifact("ui", "rest", &hash);
         assert_eq!(
-            current.status_against_baseline(dir.path()).unwrap(),
+            current
+                .status_against_baseline(dir.path(), &path, &deliver::DriftTolerance::default())
+                .unwrap(),
             deliver::Status::Same
         );
     }
@@ -99,7 +106,9 @@ mod tests {
         let staged_hash = solid_png(&staged, 4, 5, 6);
         let current = artifact("ui", "rest", &staged_hash);
         assert_eq!(
-            current.status_against_baseline(dir.path()).unwrap(),
+            current
+                .status_against_baseline(dir.path(), &staged, &deliver::DriftTolerance::default())
+                .unwrap(),
             deliver::Status::Changed
         );
     }
@@ -111,7 +120,12 @@ mod tests {
         let path = dir.path().join(current.file_name());
         std::fs::write(&path, b"not-a-png").unwrap();
         let before = std::fs::read(&path).unwrap();
-        let result = current.status_against_baseline(dir.path());
+        let missing = dir.path().join("missing.png");
+        let result = current.status_against_baseline(
+            dir.path(),
+            &missing,
+            &deliver::DriftTolerance::default(),
+        );
         assert!(result.is_err());
         let after = std::fs::read(&path).unwrap();
         assert_eq!(before, after);
@@ -128,15 +142,27 @@ mod tests {
             label: String::from("rest"),
             pixel_hash: hash,
         }];
-        let captures =
-            deliver::Capture::collect("ui", scene::Kind::System, &rendered, dir.path()).unwrap();
+        let captures = deliver::Capture::collect(
+            "ui",
+            scene::Kind::System,
+            &rendered,
+            dir.path(),
+            &deliver::DriftTolerance::default(),
+        )
+        .unwrap();
         assert_eq!(captures.len(), 1);
         assert_eq!(captures[0].status, deliver::Status::New);
         assert_eq!(captures[0].artifact.fingerprint, "ui|rest");
         let delivered = dir.path().join("ui__rest.png");
         std::fs::copy(&staging, &delivered).unwrap();
-        let again =
-            deliver::Capture::collect("ui", scene::Kind::System, &rendered, dir.path()).unwrap();
+        let again = deliver::Capture::collect(
+            "ui",
+            scene::Kind::System,
+            &rendered,
+            dir.path(),
+            &deliver::DriftTolerance::default(),
+        )
+        .unwrap();
         assert_eq!(again[0].status, deliver::Status::Same);
     }
 

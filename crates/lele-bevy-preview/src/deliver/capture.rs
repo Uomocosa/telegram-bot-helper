@@ -27,6 +27,7 @@ impl Capture {
         kind: scene::Kind,
         rendered: &[preview::RenderedState],
         out_dir: &std::path::Path,
+        drift: &deliver::DriftTolerance,
     ) -> Result<Vec<Capture>, Error> {
     }
     pub fn assert_centered(&self, tolerance: u32) -> Result<(), Error> {}
