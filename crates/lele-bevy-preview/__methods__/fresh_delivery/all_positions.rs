@@ -49,6 +49,7 @@ mod tests {
         let with_clip = deliver::FreshDelivery {
             captures: vec![capture("a"), capture("b")],
             reasons: vec![deliver::Reason::NoBaseline, deliver::Reason::NoBaseline],
+            diffs: Vec::new(),
             clip: Some(capture("clip")),
             clip_reason: Some(deliver::Reason::NoBaseline),
         };
@@ -59,6 +60,7 @@ mod tests {
         let empty = deliver::FreshDelivery {
             captures: Vec::new(),
             reasons: Vec::new(),
+            diffs: Vec::new(),
             clip: None,
             clip_reason: None,
         };

@@ -10,16 +10,28 @@ pub fn try_from_report_and_baseline(
 ) -> Result<deliver::FreshDelivery, Error> {
     let mut captures = Vec::new();
     let mut reasons = Vec::new();
+    let mut diffs = Vec::new();
     for capture in &report.captures {
         let reason = capture
             .artifact
             .reason_against_baseline(out_dir, &capture.path, drift)?;
+        let diff = if matches!(
+            reason,
+            deliver::Reason::DriftWithinTolerance | deliver::Reason::ClustersExceedDrift
+        ) {
+            capture
+                .artifact
+                .pixel_diff_against_baseline(out_dir, &capture.path, drift)?
+        } else {
+            None
+        };
         captures.push(deliver::Capture {
             path: capture.path.clone(),
             artifact: capture.artifact.clone(),
             status: reason.status(),
         });
         reasons.push(reason);
+        diffs.push(diff);
     }
     let (clip, clip_reason) = if let Some(previous) = report.clip.as_ref() {
         let reason = previous
@@ -39,6 +51,7 @@ pub fn try_from_report_and_baseline(
     Ok(deliver::FreshDelivery {
         captures,
         reasons,
+        diffs,
         clip,
         clip_reason,
     })
@@ -97,6 +110,7 @@ mod tests {
         assert_eq!(fresh.captures.len(), 1);
         assert_eq!(fresh.captures[0].status, deliver::Status::New);
         assert_eq!(fresh.reasons, vec![deliver::Reason::NoBaseline]);
+        assert_eq!(fresh.diffs, vec![None]);
         assert_eq!(fresh.captures[0].path, shot);
         assert!(fresh.clip.is_none());
         assert!(fresh.clip_reason.is_none());
@@ -111,5 +125,6 @@ mod tests {
         .unwrap();
         assert_eq!(fresh.captures[0].status, deliver::Status::Same);
         assert_eq!(fresh.reasons, vec![deliver::Reason::PixelHashEqual]);
+        assert_eq!(fresh.diffs, vec![None]);
     }
 }

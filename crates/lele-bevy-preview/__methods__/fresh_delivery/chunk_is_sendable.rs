@@ -44,6 +44,7 @@ mod tests {
         let fresh = deliver::FreshDelivery {
             captures: vec![capture("idle", deliver::Status::Same)],
             reasons: vec![deliver::Reason::DriftWithinTolerance],
+            diffs: Vec::new(),
             clip: Some(capture("clip", deliver::Status::Changed)),
             clip_reason: Some(deliver::Reason::ClustersExceedDrift),
         };

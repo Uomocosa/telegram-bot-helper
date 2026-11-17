@@ -75,6 +75,7 @@ mod tests {
                 deliver::Reason::ClustersExceedDrift,
                 deliver::Reason::DriftWithinTolerance,
             ],
+            diffs: Vec::new(),
             clip: None,
             clip_reason: None,
         };

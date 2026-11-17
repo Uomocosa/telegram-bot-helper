@@ -4,6 +4,8 @@ mod basic;
 pub use basic::constants::HASH_CHARS;
 pub use basic::enums::Media;
 pub use basic::enums::Status;
+pub use basic::structs::ChangedRegion;
+pub use basic::structs::PixelDiff;
 
 pub mod artifact;
 pub mod capture;

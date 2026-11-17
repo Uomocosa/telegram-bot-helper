@@ -59,6 +59,13 @@ impl Artifact {
         drift: &deliver::DriftTolerance,
     ) -> Result<deliver::Reason, Error> {
     }
+    pub fn pixel_diff_against_baseline(
+        &self,
+        out_dir: &Path,
+        new_image_path: &Path,
+        drift: &deliver::DriftTolerance,
+    ) -> Result<Option<deliver::PixelDiff>, Error> {
+    }
     #[must_use]
     pub fn unsent_path(&self, out_dir: &Path) -> std::path::PathBuf {}
     #[must_use]

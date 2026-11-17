@@ -8,6 +8,7 @@ use crate::report::Report;
 pub struct FreshDelivery {
     pub captures: Vec<deliver::Capture>,
     pub reasons: Vec<deliver::Reason>,
+    pub diffs: Vec<Option<deliver::PixelDiff>>,
     pub clip: Option<deliver::Capture>,
     pub clip_reason: Option<deliver::Reason>,
 }
@@ -39,6 +40,7 @@ mod tests {
         let fresh = FreshDelivery {
             captures: Vec::new(),
             reasons: Vec::new(),
+            diffs: Vec::new(),
             clip: None,
             clip_reason: None,
         };

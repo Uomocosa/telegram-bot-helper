@@ -86,6 +86,7 @@ mod tests {
                 deliver::Reason::ClustersExceedDrift,
                 deliver::Reason::DriftWithinTolerance,
             ],
+            diffs: Vec::new(),
             clip: None,
             clip_reason: None,
         };
@@ -117,6 +118,7 @@ mod tests {
         let mut resend = deliver::FreshDelivery {
             captures: vec![capture(resent_path, "idle", deliver::Status::Same)],
             reasons: vec![deliver::Reason::DriftWithinTolerance],
+            diffs: Vec::new(),
             clip: None,
             clip_reason: None,
         };

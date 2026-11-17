@@ -38,6 +38,13 @@ impl DriftTolerance {
         new: &image::RgbaImage,
     ) -> deliver::Reason {
     }
+    #[must_use]
+    pub fn pixel_diff(
+        &self,
+        baseline: &image::RgbaImage,
+        new: &image::RgbaImage,
+    ) -> deliver::PixelDiff {
+    }
 }
 
 #[atomic_delegates]
