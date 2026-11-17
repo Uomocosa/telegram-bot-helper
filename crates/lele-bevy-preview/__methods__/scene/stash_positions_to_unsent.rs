@@ -71,7 +71,12 @@ mod tests {
                 capture(changed_path.clone(), "rest", deliver::Status::Changed),
                 capture(same_path.clone(), "idle", deliver::Status::Same),
             ],
+            reasons: vec![
+                deliver::Reason::ClustersExceedDrift,
+                deliver::Reason::DriftWithinTolerance,
+            ],
             clip: None,
+            clip_reason: None,
         };
         let config = preview::Config {
             out_dir: out.clone(),

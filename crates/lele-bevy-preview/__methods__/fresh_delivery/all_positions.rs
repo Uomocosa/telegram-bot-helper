@@ -48,7 +48,9 @@ mod tests {
     fn test_usage() {
         let with_clip = deliver::FreshDelivery {
             captures: vec![capture("a"), capture("b")],
+            reasons: vec![deliver::Reason::NoBaseline, deliver::Reason::NoBaseline],
             clip: Some(capture("clip")),
+            clip_reason: Some(deliver::Reason::NoBaseline),
         };
         assert_eq!(
             all_positions(&with_clip),
@@ -56,7 +58,9 @@ mod tests {
         );
         let empty = deliver::FreshDelivery {
             captures: Vec::new(),
+            reasons: Vec::new(),
             clip: None,
+            clip_reason: None,
         };
         assert_eq!(all_positions(&empty), Vec::new());
     }

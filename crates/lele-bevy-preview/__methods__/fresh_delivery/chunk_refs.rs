@@ -43,7 +43,9 @@ mod tests {
     fn test_usage() {
         let fresh = deliver::FreshDelivery {
             captures: vec![capture("a"), capture("b")],
+            reasons: vec![deliver::Reason::NoBaseline, deliver::Reason::NoBaseline],
             clip: Some(capture("clip")),
+            clip_reason: Some(deliver::Reason::NoBaseline),
         };
         let refs = chunk_refs(&fresh, &[(1, false), (0, true), (5, false)]);
         let labels: Vec<&str> = refs

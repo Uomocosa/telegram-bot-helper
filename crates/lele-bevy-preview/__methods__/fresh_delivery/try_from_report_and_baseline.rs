@@ -9,31 +9,39 @@ pub fn try_from_report_and_baseline(
     drift: &deliver::DriftTolerance,
 ) -> Result<deliver::FreshDelivery, Error> {
     let mut captures = Vec::new();
+    let mut reasons = Vec::new();
     for capture in &report.captures {
-        let status = capture
+        let reason = capture
             .artifact
-            .status_against_baseline(out_dir, &capture.path, drift)?;
+            .reason_against_baseline(out_dir, &capture.path, drift)?;
         captures.push(deliver::Capture {
             path: capture.path.clone(),
             artifact: capture.artifact.clone(),
-            status,
+            status: reason.status(),
         });
+        reasons.push(reason);
     }
-    let clip = report
-        .clip
-        .as_ref()
-        .map(|previous| -> Result<deliver::Capture, Error> {
-            let status = previous
-                .artifact
-                .clip_status_against_baseline(out_dir, fps)?;
-            Ok(deliver::Capture {
+    let (clip, clip_reason) = if let Some(previous) = report.clip.as_ref() {
+        let reason = previous
+            .artifact
+            .clip_reason_against_baseline(out_dir, fps)?;
+        (
+            Some(deliver::Capture {
                 path: previous.path.clone(),
                 artifact: previous.artifact.clone(),
-                status,
-            })
-        })
-        .transpose()?;
-    Ok(deliver::FreshDelivery { captures, clip })
+                status: reason.status(),
+            }),
+            Some(reason),
+        )
+    } else {
+        (None, None)
+    };
+    Ok(deliver::FreshDelivery {
+        captures,
+        reasons,
+        clip,
+        clip_reason,
+    })
 }
 
 #[cfg(test)]
@@ -88,8 +96,10 @@ mod tests {
         .unwrap();
         assert_eq!(fresh.captures.len(), 1);
         assert_eq!(fresh.captures[0].status, deliver::Status::New);
+        assert_eq!(fresh.reasons, vec![deliver::Reason::NoBaseline]);
         assert_eq!(fresh.captures[0].path, shot);
         assert!(fresh.clip.is_none());
+        assert!(fresh.clip_reason.is_none());
 
         let baseline = write_solid(&artifact("ui", "rest", "x").delivered_path(out), 40);
         let fresh = try_from_report_and_baseline(
@@ -100,5 +110,6 @@ mod tests {
         )
         .unwrap();
         assert_eq!(fresh.captures[0].status, deliver::Status::Same);
+        assert_eq!(fresh.reasons, vec![deliver::Reason::PixelHashEqual]);
     }
 }

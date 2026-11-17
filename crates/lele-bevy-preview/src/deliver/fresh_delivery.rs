@@ -7,7 +7,9 @@ use crate::report::Report;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FreshDelivery {
     pub captures: Vec<deliver::Capture>,
+    pub reasons: Vec<deliver::Reason>,
     pub clip: Option<deliver::Capture>,
+    pub clip_reason: Option<deliver::Reason>,
 }
 
 #[atomic_delegates]
@@ -36,7 +38,9 @@ mod tests {
     fn test_usage() {
         let fresh = FreshDelivery {
             captures: Vec::new(),
+            reasons: Vec::new(),
             clip: None,
+            clip_reason: None,
         };
         assert_eq!(fresh.captures.len(), 0);
         assert!(fresh.clip.is_none());

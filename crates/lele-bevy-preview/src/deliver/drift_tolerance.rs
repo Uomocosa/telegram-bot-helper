@@ -23,14 +23,20 @@ impl Default for DriftTolerance {
     }
 }
 
+#[rustfmt::skip]
+impl DriftTolerance {
+    #[must_use]
+    pub fn status_against_images(&self, baseline: &image::RgbaImage, new: &image::RgbaImage) -> deliver::Status { self.reason_against_images(baseline, new).status() }
+}
+
 #[atomic_delegates]
 impl DriftTolerance {
     #[must_use]
-    pub fn status_against_images(
+    pub fn reason_against_images(
         &self,
         baseline: &image::RgbaImage,
         new: &image::RgbaImage,
-    ) -> deliver::Status {
+    ) -> deliver::Reason {
     }
 }
 

@@ -1,13 +1,13 @@
 use crate::deliver;
 
 #[must_use]
-pub fn status_against_images(
+pub fn reason_against_images(
     tolerance: &deliver::DriftTolerance,
     baseline: &image::RgbaImage,
     new: &image::RgbaImage,
-) -> deliver::Status {
+) -> deliver::Reason {
     if baseline.dimensions() != new.dimensions() {
-        return deliver::Status::Changed;
+        return deliver::Reason::SizeDiffers;
     }
     let mask = tolerance.changed_mask(baseline, new);
     let clusters = tolerance.changed_clusters(&mask, new.width(), new.height());
@@ -15,15 +15,15 @@ pub fn status_against_images(
         .iter()
         .all(|cluster| tolerance.is_cluster_drift(cluster, baseline, new))
     {
-        deliver::Status::Same
+        deliver::Reason::DriftWithinTolerance
     } else {
-        deliver::Status::Changed
+        deliver::Reason::ClustersExceedDrift
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::status_against_images;
+    use super::reason_against_images;
     use crate::deliver;
 
     #[test]
@@ -31,8 +31,17 @@ mod tests {
         let tolerance = deliver::DriftTolerance::default();
         let image = image::RgbaImage::from_pixel(8, 8, image::Rgba([10, 12, 16, 255]));
         assert_eq!(
-            status_against_images(&tolerance, &image, &image),
+            reason_against_images(&tolerance, &image, &image),
+            deliver::Reason::DriftWithinTolerance
+        );
+        assert_eq!(
+            reason_against_images(&tolerance, &image, &image).status(),
             deliver::Status::Same
+        );
+        let other = image::RgbaImage::from_pixel(9, 8, image::Rgba([10, 12, 16, 255]));
+        assert_eq!(
+            reason_against_images(&tolerance, &image, &other),
+            deliver::Reason::SizeDiffers
         );
     }
 }

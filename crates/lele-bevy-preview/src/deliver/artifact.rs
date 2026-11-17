@@ -39,12 +39,25 @@ impl Artifact {
         fps: u32,
     ) -> Result<deliver::Status, Error> {
     }
+    pub fn clip_reason_against_baseline(
+        &self,
+        out_dir: &Path,
+        fps: u32,
+    ) -> Result<deliver::Reason, Error> {
+    }
     pub fn status_against_baseline(
         &self,
         out_dir: &Path,
         new_image_path: &Path,
         drift: &deliver::DriftTolerance,
     ) -> Result<deliver::Status, Error> {
+    }
+    pub fn reason_against_baseline(
+        &self,
+        out_dir: &Path,
+        new_image_path: &Path,
+        drift: &deliver::DriftTolerance,
+    ) -> Result<deliver::Reason, Error> {
     }
     #[must_use]
     pub fn unsent_path(&self, out_dir: &Path) -> std::path::PathBuf {}
@@ -75,6 +88,14 @@ impl Artifact {
         drift: &deliver::DriftTolerance,
         is_exact: bool,
     ) -> Result<deliver::Status, Error> {
+    }
+    pub(crate) fn reason_against_baseline_with(
+        &self,
+        out_dir: &Path,
+        new_image_path: &Path,
+        drift: &deliver::DriftTolerance,
+        is_exact: bool,
+    ) -> Result<deliver::Reason, Error> {
     }
 }
 

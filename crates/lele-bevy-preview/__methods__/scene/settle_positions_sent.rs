@@ -82,7 +82,12 @@ mod tests {
                 capture(changed_path, "rest", deliver::Status::Changed),
                 capture(same_path.clone(), "idle", deliver::Status::Same),
             ],
+            reasons: vec![
+                deliver::Reason::ClustersExceedDrift,
+                deliver::Reason::DriftWithinTolerance,
+            ],
             clip: None,
+            clip_reason: None,
         };
         let config = preview::Config {
             out_dir: out.clone(),
@@ -111,7 +116,9 @@ mod tests {
         std::fs::write(&resent_path, b"resent").unwrap();
         let mut resend = deliver::FreshDelivery {
             captures: vec![capture(resent_path, "idle", deliver::Status::Same)],
+            reasons: vec![deliver::Reason::DriftWithinTolerance],
             clip: None,
+            clip_reason: None,
         };
         settle_positions_sent(
             &scene_named("ui"),

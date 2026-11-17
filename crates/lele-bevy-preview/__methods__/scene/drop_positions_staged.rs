@@ -74,7 +74,9 @@ mod tests {
         std::fs::write(&clip_shot, b"clip").unwrap();
         let mut fresh = deliver::FreshDelivery {
             captures: vec![capture(shot.clone(), "rest", deliver::Status::Changed)],
+            reasons: vec![deliver::Reason::ClustersExceedDrift],
             clip: Some(capture(clip_shot.clone(), "clip", deliver::Status::Changed)),
+            clip_reason: Some(deliver::Reason::ClustersExceedDrift),
         };
         let unsent = fresh.captures[0].artifact.unsent_path(&out);
         std::fs::create_dir_all(unsent.parent().unwrap()).unwrap();

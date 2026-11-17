@@ -43,7 +43,9 @@ mod tests {
     fn test_usage() {
         let fresh = deliver::FreshDelivery {
             captures: vec![capture("idle", deliver::Status::Same)],
+            reasons: vec![deliver::Reason::DriftWithinTolerance],
             clip: Some(capture("clip", deliver::Status::Changed)),
+            clip_reason: Some(deliver::Reason::ClustersExceedDrift),
         };
         assert!(!chunk_is_sendable(&fresh, &[(0, false)]));
         assert!(chunk_is_sendable(&fresh, &[(0, false), (0, true)]));
