@@ -3,6 +3,7 @@
 
 [lele.config]
 exclude = ["target", ".devenv", ".git"]
+e2e_test_dirs = ["crates/telegram-bot-helper/tests", "crates/lele-bevy-preview/tests"]
 
 [lele.lint]
 

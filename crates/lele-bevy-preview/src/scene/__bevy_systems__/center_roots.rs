@@ -34,74 +34,48 @@ mod tests {
 
     use super::center_roots;
 
-    fn spawn_corner_panel(mut commands: Commands) {
-        commands.spawn((
-            Node {
-                position_type: PositionType::Absolute,
-                top: Val::Px(24.0),
-                left: Val::Px(24.0),
-                padding: UiRect::axes(Val::Px(16.0), Val::Px(10.0)),
-                ..default()
-            },
-            BackgroundColor(Color::srgb(0.15, 0.35, 0.65)),
-            children![Text::new("pinned at 24/24")],
-        ));
-    }
-
-    #[test]
-    fn test_usage() {
-        let mut app = App::new();
-        app.add_systems(Startup, (spawn_corner_panel, center_roots).chain());
-        app.update();
-        let world = app.world_mut();
-        let mut roots = world.query_filtered::<&Node, Without<ChildOf>>();
-        let parentless: Vec<&Node> = roots.iter(world).collect();
-        assert_eq!(parentless.len(), 1);
-        assert!(
-            parentless
-                .iter()
-                .all(|node| node.justify_content == JustifyContent::Center)
-        );
-        let mut moved = world.query_filtered::<&Node, (With<ChildOf>, With<BackgroundColor>)>();
-        assert!(
-            moved
-                .iter(world)
-                .all(|node| node.position_type == PositionType::Relative)
-        );
-    }
-
-    #[derive(Resource)]
-    struct Centre;
-
-    fn preview_build(app: &mut App) {
-        app.add_systems(Startup, spawn_corner_panel);
-        app.add_systems(
-            Update,
-            lele_bevy_preview::scene::bevy_systems::center_roots.run_if(resource_exists::<Centre>),
-        );
-    }
-
-    const fn preview_noop(_world: &mut World) {}
-
-    fn centre(world: &mut World) {
-        world.insert_resource(Centre);
-    }
-
     #[test]
     fn center_roots_ui_png_preview() {
         let out = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("ui_preview");
         let preview = lele_bevy_preview::scene::Scene {
             name: String::from("center_roots"),
             kind: lele_bevy_preview::scene::Kind::System,
-            build: preview_build,
+            build: |app: &mut App| {
+                app.add_systems(Startup, |mut commands: Commands| {
+                    commands.spawn((
+                        Node {
+                            position_type: PositionType::Absolute,
+                            top: Val::Px(24.0),
+                            left: Val::Px(24.0),
+                            padding: UiRect::axes(Val::Px(16.0), Val::Px(10.0)),
+                            ..default()
+                        },
+                        BackgroundColor(Color::srgb(0.15, 0.35, 0.65)),
+                        children![Text::new("pinned at 24/24")],
+                    ));
+                });
+                app.add_systems(Update, center_roots);
+            },
             states: vec![
                 lele_bevy_preview::scene::State {
-                    label: String::from("pinned in the corner"),
-                    apply: preview_noop,
+                    label: String::from("one pinned root, centred"),
+                    apply: |_world: &mut World| {},
                 },
                 lele_bevy_preview::scene::State {
-                    label: String::from("centred"),
-                    apply: centre,
+                    label: String::from("a second pinned root, also centred"),
+                    apply: |world: &mut World| {
+                        world.spawn((
+                            Node {
+                                position_type: PositionType::Absolute,
+                                top: Val::Px(24.0),
+                                left: Val::Px(24.0),
+                                padding: UiRect::axes(Val::Px(16.0), Val::Px(10.0)),
+                                ..default()
+                            },
+                            BackgroundColor(Color::srgb(0.15, 0.55, 0.35)),
+                            children![Text::new("pinned at 24/24 again")],
+                        ));
+                    },
                 },
             ],
             timeline: None,
@@ -115,7 +89,8 @@ mod tests {
         let [before, after] = report.captures.as_slice() else {
             panic!("expected two captures");
         };
-        assert!(before.assert_centered(2).is_err());
+        before.assert_centered(2).expect("centred");
         after.assert_centered(2).expect("centred");
+        assert_ne!(before.artifact.pixel_hash, after.artifact.pixel_hash);
     }
 }

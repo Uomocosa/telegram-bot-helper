@@ -35,5 +35,3 @@ impl Default for Config {
         }
     }
 }
-
-// no test_usage necessary
