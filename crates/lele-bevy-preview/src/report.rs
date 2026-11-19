@@ -54,32 +54,31 @@ impl Report {
 mod tests {
     use crate::deliver;
     use crate::report::Report;
-    use crate::scene;
-    use std::path::PathBuf;
-
-    fn capture(label: &str, status: deliver::Status) -> deliver::Capture {
-        deliver::Capture {
-            path: PathBuf::from(format!("out/{label}.png")),
-            artifact: deliver::Artifact {
-                scene: String::from("ui"),
-                label: label.to_string(),
-                fingerprint: format!("ui|{label}"),
-                pixel_hash: String::from("h"),
-                media: deliver::Media::Png,
-                kind: scene::Kind::System,
-            },
-            status,
-        }
-    }
+    use crate::testing::capture;
 
     #[test]
     fn test_usage() {
         let report = Report {
             captures: vec![
-                capture("rest", deliver::Status::Same),
-                capture("hover", deliver::Status::Changed),
+                capture(
+                    "out/rest.png",
+                    "rest",
+                    deliver::Media::Png,
+                    deliver::Status::Same,
+                ),
+                capture(
+                    "out/hover.png",
+                    "hover",
+                    deliver::Media::Png,
+                    deliver::Status::Changed,
+                ),
             ],
-            clip: Some(capture("clip", deliver::Status::Changed)),
+            clip: Some(capture(
+                "out/clip.png",
+                "clip",
+                deliver::Media::Png,
+                deliver::Status::Changed,
+            )),
         };
         let text = report.to_string();
         assert!(text.contains("2 capture(s)"));

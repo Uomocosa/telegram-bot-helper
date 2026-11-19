@@ -73,37 +73,56 @@ impl Capture {
 
 #[cfg(test)]
 mod tests {
-    use super::Capture;
     use crate::deliver;
-    use crate::scene;
-
-    fn capture(status: deliver::Status) -> Capture {
-        Capture {
-            path: std::path::PathBuf::from("out/ui__one.png"),
-            artifact: deliver::Artifact {
-                scene: String::from("ui"),
-                label: String::from("one"),
-                fingerprint: String::from("ui|one"),
-                pixel_hash: String::from("h"),
-                media: deliver::Media::Png,
-                kind: scene::Kind::System,
-            },
-            status,
-        }
-    }
+    use crate::testing::capture;
 
     #[test]
     fn test_usage() {
-        assert!(capture(deliver::Status::New).is_sendable());
-        assert!(!capture(deliver::Status::Same).is_sendable());
-        assert_eq!(capture(deliver::Status::Changed).status_word(), "changed");
-        let png = capture(deliver::Status::New);
+        assert!(
+            capture(
+                "out/ui__one.png",
+                "one",
+                deliver::Media::Png,
+                deliver::Status::New
+            )
+            .is_sendable()
+        );
+        assert!(
+            !capture(
+                "out/ui__one.png",
+                "one",
+                deliver::Media::Png,
+                deliver::Status::Same
+            )
+            .is_sendable()
+        );
+        assert_eq!(
+            capture(
+                "out/ui__one.png",
+                "one",
+                deliver::Media::Png,
+                deliver::Status::Changed
+            )
+            .status_word(),
+            "changed"
+        );
+        let png = capture(
+            "out/ui__one.png",
+            "one",
+            deliver::Media::Png,
+            deliver::Status::New,
+        );
         assert!(!png.is_mp4());
         assert_eq!(
             png.telegram_media_kind(),
             telegram_bot_helper::MediaKind::Photo
         );
-        let mut clip = capture(deliver::Status::New);
+        let mut clip = capture(
+            "out/ui__one.png",
+            "one",
+            deliver::Media::Png,
+            deliver::Status::New,
+        );
         clip.path = std::path::PathBuf::from("out/ui__clip.mp4");
         clip.artifact.media = deliver::Media::Mp4;
         assert!(clip.is_mp4());

@@ -57,14 +57,8 @@ mod tests {
     use crate::MediaGroup;
     use crate::MediaItem;
     use crate::MediaKind;
+    use crate::testing::bot;
     use serde_json::Value;
-
-    fn bot() -> TelegramBot {
-        TelegramBot {
-            token: "token".to_string(),
-            chat_id: "chat".to_string(),
-        }
-    }
 
     #[test]
     fn test_usage() {

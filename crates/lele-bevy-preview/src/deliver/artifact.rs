@@ -110,23 +110,11 @@ impl Artifact {
 mod tests {
     use super::Artifact;
     use crate::deliver;
-    use crate::deliver::Media;
-    use crate::scene;
-
-    fn artifact(label: &str, pixel_hash: &str) -> Artifact {
-        Artifact {
-            scene: String::from("ui"),
-            label: String::from(label),
-            fingerprint: Artifact::fingerprint_of("ui", label),
-            pixel_hash: String::from(pixel_hash),
-            media: Media::Png,
-            kind: scene::Kind::System,
-        }
-    }
+    use crate::testing::artifact;
 
     #[test]
     fn test_usage() {
-        let artifact = artifact("one room", "h1");
+        let artifact = artifact("ui", "one room", "h1");
         assert_eq!(Artifact::slug("one room"), "one_room");
         assert_eq!(artifact.file_name(), "ui__one_room.png");
         let dir = tempfile::tempdir().unwrap();

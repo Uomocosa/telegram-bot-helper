@@ -3,41 +3,10 @@ mod tests {
     use crate::PreviewApp;
     use crate::deliver;
     use crate::preview;
-    use bevy::prelude::*;
-
     use crate::scene;
-
-    fn noop(_world: &mut World) {}
-    fn noop_build(_app: &mut App) {}
-
-    fn scene() -> scene::Scene {
-        scene::Scene {
-            name: String::from("demo"),
-            kind: scene::Kind::System,
-            build: noop_build,
-            states: vec![
-                crate::scene::State {
-                    label: String::from("one room"),
-                    apply: noop,
-                },
-                crate::scene::State {
-                    label: String::from("no rooms!"),
-                    apply: noop,
-                },
-            ],
-            timeline: None,
-        }
-    }
-
-    fn fast(dir: &std::path::Path) -> preview::Config {
-        preview::Config {
-            out_dir: dir.to_path_buf(),
-            warmup_frames: 5,
-            max_capture_frames: 240,
-            min_distinct_colors: 1,
-            ..preview::Config::default()
-        }
-    }
+    use crate::testing::fast_config;
+    use crate::testing::scene_with;
+    use bevy::prelude::*;
 
     #[test]
     fn test_usage() {
@@ -50,7 +19,10 @@ mod tests {
 
     #[test]
     fn test_usage_from_scene_produces_an_offscreen_target_and_a_camera() {
-        let mut app = PreviewApp::from_scene(&scene(), &preview::Config::default());
+        let mut app = PreviewApp::from_scene(
+            &scene_with("demo", &["one room", "no rooms!"], None),
+            &preview::Config::default(),
+        );
         assert_ne!(app.target.clone(), Handle::default());
         let world = app.app.world_mut();
         let mut cameras = world.query_filtered::<Entity, With<bevy::camera::RenderTarget>>();
@@ -59,7 +31,10 @@ mod tests {
 
     #[test]
     fn test_usage_capture_writes_a_non_empty_png_and_creates_parents() {
-        let mut app = PreviewApp::from_scene(&scene(), &preview::Config::default());
+        let mut app = PreviewApp::from_scene(
+            &scene_with("demo", &["one room", "no rooms!"], None),
+            &preview::Config::default(),
+        );
         let dir = tempfile::tempdir().unwrap();
         let out = dir.path().join("nested/deeper/frame.png");
         let image = app.capture(&out, 240).unwrap();
@@ -69,7 +44,10 @@ mod tests {
 
     #[test]
     fn test_usage_settled_returns_a_frame_once_two_readbacks_match() {
-        let mut app = PreviewApp::from_scene(&scene(), &preview::Config::default());
+        let mut app = PreviewApp::from_scene(
+            &scene_with("demo", &["one room", "no rooms!"], None),
+            &preview::Config::default(),
+        );
         let dir = tempfile::tempdir().unwrap();
         let out = dir.path().join("settled.png");
         let image = app.settled(&out, 240, 1).unwrap();
@@ -79,7 +57,10 @@ mod tests {
 
     #[test]
     fn test_usage_a_zero_frame_budget_reports_no_frame() {
-        let mut app = PreviewApp::from_scene(&scene(), &preview::Config::default());
+        let mut app = PreviewApp::from_scene(
+            &scene_with("demo", &["one room", "no rooms!"], None),
+            &preview::Config::default(),
+        );
         let dir = tempfile::tempdir().unwrap();
         let out = dir.path().join("missing.png");
         assert!(matches!(
@@ -92,7 +73,9 @@ mod tests {
     fn test_usage_render_states_writes_one_png_per_state_named_after_the_scene() {
         let dir = tempfile::tempdir().unwrap();
         let staging = deliver::Artifact::staging_root(dir.path(), "demo");
-        let rendered = scene().render_states(&fast(dir.path()), &staging).unwrap();
+        let rendered = scene_with("demo", &["one room", "no rooms!"], None)
+            .render_states(&fast_config(dir.path()), &staging)
+            .unwrap();
         assert_eq!(rendered.len(), 2);
         for state in &rendered {
             assert!(state.path.exists(), "{} missing", state.path.display());
@@ -112,15 +95,22 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let broken = scene::Scene {
             states: Vec::new(),
-            ..scene()
+            ..scene_with("demo", &["one room", "no rooms!"], None)
         };
         let staging = deliver::Artifact::staging_root(dir.path(), "demo");
-        assert!(broken.render_states(&fast(dir.path()), &staging).is_err());
+        assert!(
+            broken
+                .render_states(&fast_config(dir.path()), &staging)
+                .is_err()
+        );
     }
 
     #[test]
     fn test_usage_from_scene_warmup_and_target_are_usable_together() {
-        let mut app = PreviewApp::from_scene(&scene(), &preview::Config::default());
+        let mut app = PreviewApp::from_scene(
+            &scene_with("demo", &["one room", "no rooms!"], None),
+            &preview::Config::default(),
+        );
         app.warmup();
         app.app.update();
         assert_ne!(app.target.clone(), Handle::default());

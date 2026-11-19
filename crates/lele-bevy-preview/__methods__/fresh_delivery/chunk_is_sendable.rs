@@ -18,34 +18,27 @@ pub fn chunk_is_sendable(fresh: &deliver::FreshDelivery, chunk: &[(usize, bool)]
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-
     use super::chunk_is_sendable;
     use crate::deliver;
-    use crate::scene;
-
-    fn capture(label: &str, status: deliver::Status) -> deliver::Capture {
-        deliver::Capture {
-            path: PathBuf::from(format!("{label}.png")),
-            artifact: deliver::Artifact {
-                scene: String::from("ui"),
-                label: String::from(label),
-                fingerprint: deliver::Artifact::fingerprint_of("ui", label),
-                pixel_hash: String::from("hash"),
-                media: deliver::Media::Png,
-                kind: scene::Kind::System,
-            },
-            status,
-        }
-    }
+    use crate::testing::capture;
 
     #[test]
     fn test_usage() {
         let fresh = deliver::FreshDelivery {
-            captures: vec![capture("idle", deliver::Status::Same)],
+            captures: vec![capture(
+                "idle.png",
+                "idle",
+                deliver::Media::Png,
+                deliver::Status::Same,
+            )],
             reasons: vec![deliver::Reason::DriftWithinTolerance],
             diffs: Vec::new(),
-            clip: Some(capture("clip", deliver::Status::Changed)),
+            clip: Some(capture(
+                "clip.png",
+                "clip",
+                deliver::Media::Png,
+                deliver::Status::Changed,
+            )),
             clip_reason: Some(deliver::Reason::ClustersExceedDrift),
         };
         assert!(!chunk_is_sendable(&fresh, &[(0, false)]));

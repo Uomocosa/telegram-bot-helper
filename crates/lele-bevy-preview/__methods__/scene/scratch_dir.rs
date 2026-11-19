@@ -15,17 +15,7 @@ mod tests {
 
     use super::scratch_dir;
     use crate::preview;
-    use crate::scene;
-
-    fn scene_named(name: &str) -> scene::Scene {
-        scene::Scene {
-            name: String::from(name),
-            kind: scene::Kind::System,
-            build: |_app| {},
-            states: Vec::new(),
-            timeline: None,
-        }
-    }
+    use crate::testing::scene_with;
 
     #[test]
     fn test_usage() {
@@ -34,11 +24,11 @@ mod tests {
             ..preview::Config::default()
         };
         assert_eq!(
-            scratch_dir(&scene_named("ui"), &config),
+            scratch_dir(&scene_with("ui", &[], None), &config),
             PathBuf::from("out/ui_frames")
         );
         assert_eq!(
-            scratch_dir(&scene_named("press_flow"), &config),
+            scratch_dir(&scene_with("press_flow", &[], None), &config),
             PathBuf::from("out/press_flow_frames")
         );
     }

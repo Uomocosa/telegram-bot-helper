@@ -19,15 +19,7 @@ impl ApiResponse {
 
 #[cfg(test)]
 mod tests {
-    use super::ApiResponse;
-
-    fn response(status: &str, body: &str) -> ApiResponse {
-        ApiResponse {
-            op: "op",
-            status: status.to_string(),
-            body: body.to_string(),
-        }
-    }
+    use crate::testing::response;
 
     #[test]
     fn test_usage() {

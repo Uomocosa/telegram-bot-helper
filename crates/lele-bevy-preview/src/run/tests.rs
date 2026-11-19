@@ -1,11 +1,6 @@
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
-    use std::sync::Mutex;
-    use std::sync::OnceLock;
-
-    use bevy::ecs::world::World;
-    use bevy::prelude::App;
 
     use crate::Error;
     use crate::Report;
@@ -14,112 +9,25 @@ mod tests {
     use crate::preview;
     use crate::scene;
     use crate::scene::Scene;
-    use crate::scene::State;
-
-    fn noop(_world: &mut World) {}
-    fn noop_build(_app: &mut App) {}
-
-    fn scene() -> Scene {
-        Scene {
-            name: String::from("sync_room_list"),
-            kind: scene::Kind::System,
-            build: noop_build,
-            states: vec![State {
-                label: String::from("two rooms"),
-                apply: noop,
-            }],
-            timeline: None,
-        }
-    }
-
-    fn config(dir: &std::path::Path) -> preview::Config {
-        preview::Config {
-            out_dir: dir.to_path_buf(),
-            warmup_frames: 5,
-            max_capture_frames: 240,
-            min_distinct_colors: 1,
-            ..preview::Config::default()
-        }
-    }
-
-    fn solid_png(path: &std::path::Path, red: u8, green: u8, blue: u8) -> String {
-        if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent).unwrap();
-        }
-        let image = image::RgbaImage::from_pixel(8, 8, image::Rgba([red, green, blue, 255]));
-        image.save(path).unwrap();
-        deliver::Artifact::hash_png_pixels(path).unwrap()
-    }
-
-    fn write_delivered(
-        dir: &std::path::Path,
-        scene_name: &str,
-        label: &str,
-        red: u8,
-        green: u8,
-        blue: u8,
-    ) -> deliver::Artifact {
-        let artifact = deliver::Artifact {
-            scene: scene_name.to_string(),
-            label: label.to_string(),
-            fingerprint: deliver::Artifact::fingerprint_of(scene_name, label),
-            pixel_hash: String::new(),
-            media: deliver::Media::Png,
-            kind: scene::Kind::System,
-        };
-        let path = artifact.delivered_path(dir);
-        let hash = solid_png(&path, red, green, blue);
-        deliver::Artifact {
-            pixel_hash: hash,
-            ..artifact
-        }
-    }
-
-    fn staging_capture(
-        dir: &std::path::Path,
-        scene_name: &str,
-        label: &str,
-        red: u8,
-        green: u8,
-        blue: u8,
-        status: deliver::Status,
-    ) -> deliver::Capture {
-        let staging_root = deliver::Artifact::staging_root(dir, scene_name);
-        std::fs::create_dir_all(&staging_root).unwrap();
-        let probe = deliver::Artifact {
-            scene: scene_name.to_string(),
-            label: label.to_string(),
-            fingerprint: deliver::Artifact::fingerprint_of(scene_name, label),
-            pixel_hash: String::new(),
-            media: deliver::Media::Png,
-            kind: scene::Kind::System,
-        };
-        let file = probe.file_name();
-        let staging = staging_root.join(file);
-        let hash = solid_png(&staging, red, green, blue);
-        let artifact = deliver::Artifact {
-            pixel_hash: hash,
-            ..probe
-        };
-        deliver::Capture {
-            path: staging,
-            artifact,
-            status,
-        }
-    }
-
-    fn no_staging_left(dir: &std::path::Path) {
-        let staging = dir.join(basic::constants::STAGING_DIR);
-        if staging.exists() {
-            let entries: Vec<_> = std::fs::read_dir(&staging).unwrap().collect();
-            assert!(entries.is_empty(), "staging not cleaned: {staging:?}");
-        }
-    }
+    use crate::testing::config_with;
+    use crate::testing::fail_always;
+    use crate::testing::fail_on_single_chunk;
+    use crate::testing::fast_config;
+    use crate::testing::file_recording_send;
+    use crate::testing::no_credentials;
+    use crate::testing::no_staging_left;
+    use crate::testing::recording_send;
+    use crate::testing::scene_with;
+    use crate::testing::solid_png;
+    use crate::testing::staging_capture;
+    use crate::testing::write_delivered;
 
     #[test]
     fn test_usage() {
         let dir = tempfile::tempdir().unwrap();
-        let report = scene().build_report(&config(dir.path())).unwrap();
+        let report = scene_with("sync_room_list", &["two rooms"], None)
+            .build_report(&fast_config(dir.path()))
+            .unwrap();
         assert_eq!(report.captures.len(), 1);
         assert_eq!(report.captures[0].status, deliver::Status::New);
         assert!(report.clip.is_none());
@@ -136,8 +44,12 @@ mod tests {
     #[test]
     fn test_usage_second_identical_run_hashes_identically() {
         let dir = tempfile::tempdir().unwrap();
-        let report = scene().build_report(&config(dir.path())).unwrap();
-        let second = scene().build_report(&config(dir.path())).unwrap();
+        let report = scene_with("sync_room_list", &["two rooms"], None)
+            .build_report(&fast_config(dir.path()))
+            .unwrap();
+        let second = scene_with("sync_room_list", &["two rooms"], None)
+            .build_report(&fast_config(dir.path()))
+            .unwrap();
         let first_hash = &report.captures[0].artifact.pixel_hash;
         assert_eq!(
             &second.captures[0].artifact.pixel_hash, first_hash,
@@ -149,7 +61,9 @@ mod tests {
     fn test_usage_differing_pixels_report_changed() {
         let dir = tempfile::tempdir().unwrap();
         write_delivered(dir.path(), "sync_room_list", "two rooms", 1, 2, 3);
-        let third = scene().build_report(&config(dir.path())).unwrap();
+        let third = scene_with("sync_room_list", &["two rooms"], None)
+            .build_report(&fast_config(dir.path()))
+            .unwrap();
         assert_eq!(third.captures[0].status, deliver::Status::Changed);
         assert!(third.captures[0].is_sendable());
     }
@@ -159,9 +73,9 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let broken = Scene {
             states: Vec::new(),
-            ..scene()
+            ..scene_with("sync_room_list", &["two rooms"], None)
         };
-        let result = broken.run(&config(dir.path()));
+        let result = broken.run(&fast_config(dir.path()));
         assert!(matches!(result, Err(Error::Scene(_))));
         assert!(
             !dir.path()
@@ -174,7 +88,9 @@ mod tests {
     #[test]
     fn test_usage_artifacts_are_named_after_the_scene_and_state() {
         let dir = tempfile::tempdir().unwrap();
-        let report = scene().build_report(&config(dir.path())).unwrap();
+        let report = scene_with("sync_room_list", &["two rooms"], None)
+            .build_report(&fast_config(dir.path()))
+            .unwrap();
         let path: PathBuf = report.captures[0].path.clone();
         let name = path
             .file_name()
@@ -190,7 +106,9 @@ mod tests {
         let delivered = write_delivered(dir.path(), "sync_room_list", "two rooms", 10, 20, 30);
         let _ = delivered;
         std::fs::remove_file(dir.path().join("sync_room_list__two_rooms.png")).unwrap();
-        let second = scene().build_report(&config(dir.path())).unwrap();
+        let second = scene_with("sync_room_list", &["two rooms"], None)
+            .build_report(&fast_config(dir.path()))
+            .unwrap();
         assert_eq!(second.captures[0].status, deliver::Status::New);
         assert!(second.captures[0].is_sendable());
     }
@@ -198,118 +116,17 @@ mod tests {
     #[test]
     fn test_usage_an_unrecorded_preview_stays_pending() {
         let dir = tempfile::tempdir().unwrap();
-        scene().build_report(&config(dir.path())).unwrap();
-        let second = scene().build_report(&config(dir.path())).unwrap();
+        scene_with("sync_room_list", &["two rooms"], None)
+            .build_report(&fast_config(dir.path()))
+            .unwrap();
+        let second = scene_with("sync_room_list", &["two rooms"], None)
+            .build_report(&fast_config(dir.path()))
+            .unwrap();
         assert_eq!(
             second.captures[0].status,
             deliver::Status::New,
             "a preview never delivered must keep being offered"
         );
-    }
-
-    static SENT_LOG_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-
-    fn recording_send(items: &[&deliver::Capture], caption: &str) -> Result<usize, Error> {
-        let _ = caption;
-        if items.is_empty() {
-            return Err(Error::Scene(String::from("empty chunk")));
-        }
-        Ok(items.len())
-    }
-
-    fn fail_on_single_chunk(items: &[&deliver::Capture], caption: &str) -> Result<usize, Error> {
-        let _ = caption;
-        if items.len() < 10 {
-            return Err(Error::Scene(String::from("injected failure")));
-        }
-        Ok(items.len())
-    }
-
-    fn fail_always(_items: &[&deliver::Capture], _caption: &str) -> Result<usize, Error> {
-        Err(Error::Scene(String::from("injected failure")))
-    }
-
-    fn no_credentials(items: &[&deliver::Capture], _caption: &str) -> Result<usize, Error> {
-        if items.is_empty() {
-            return Err(Error::Scene(String::from("empty chunk")));
-        }
-        Ok(0)
-    }
-
-    fn file_recording_send(items: &[&deliver::Capture], caption: &str) -> Result<usize, Error> {
-        let _ = caption;
-        let guard = SENT_LOG_LOCK
-            .get_or_init(|| Mutex::new(()))
-            .lock()
-            .map_err(|_| Error::Scene(String::from("lock poisoned")))?;
-        let Some(dir) = items
-            .first()
-            .and_then(|capture| capture.path.parent())
-            .map(std::path::Path::to_path_buf)
-        else {
-            return Ok(0);
-        };
-        let top_dir = dir
-            .ancestors()
-            .find(|ancestor| {
-                ancestor.join("test-sent.log").parent().is_some()
-                    && ancestor
-                        .join(basic::constants::LOCKS_DIR)
-                        .parent()
-                        .is_some()
-            })
-            .map_or_else(|| dir.clone(), |_| dir.clone());
-        let _ = top_dir;
-        let out_dir = items.first().map(|_| dir.clone()).unwrap_or_default();
-        let _ = out_dir;
-        let mut buffer = String::new();
-        for capture in items {
-            buffer.push_str(&capture.artifact.fingerprint);
-            buffer.push('\n');
-        }
-        let log_path = std::env::var("PREVIEW_SENT_LOG")
-            .map_or_else(|_| dir.join("test-sent.log"), PathBuf::from);
-        let log_dir = log_path
-            .parent()
-            .map_or_else(|| dir.clone(), std::path::Path::to_path_buf);
-        let _ = std::fs::create_dir_all(&log_dir);
-        let log_path = if log_path.is_absolute() {
-            log_path
-        } else {
-            dir.join("test-sent.log")
-        };
-        std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(&log_path)
-            .and_then(|mut file| {
-                use std::io::Write;
-                file.write_all(buffer.as_bytes())
-            })
-            .map_err(|_| Error::Scene(String::from("sent log unavailable")))?;
-        drop(guard);
-        Ok(items.len())
-    }
-
-    fn scene_for(name: &str) -> Scene {
-        Scene {
-            name: name.to_string(),
-            kind: scene::Kind::System,
-            build: noop_build,
-            states: Vec::new(),
-            timeline: None,
-        }
-    }
-
-    fn config_with(
-        dir: &std::path::Path,
-        send: fn(&[&deliver::Capture], &str) -> Result<usize, Error>,
-    ) -> preview::Config {
-        preview::Config {
-            out_dir: dir.to_path_buf(),
-            send_preview_group: send,
-            ..preview::Config::default()
-        }
     }
 
     #[test]
@@ -333,13 +150,7 @@ mod tests {
             captures: vec![staged],
             clip: None,
         };
-        let scene_obj = Scene {
-            name: String::from("sync_room_list"),
-            kind: scene::Kind::System,
-            build: noop_build,
-            states: Vec::new(),
-            timeline: None,
-        };
+        let scene_obj = scene_with("sync_room_list", &[], None);
         let cfg = config_with(dir.path(), recording_send);
         let sent = scene_obj.deliver_report(&mut report, &cfg).unwrap();
         assert_eq!(sent, 0);
@@ -390,7 +201,7 @@ mod tests {
             captures: vec![staged],
             clip: None,
         };
-        let scene_obj = scene_for("sync_room_list");
+        let scene_obj = scene_with("sync_room_list", &[], None);
         let cfg = config_with(dir.path(), recording_send);
         let sent = scene_obj.deliver_report(&mut report, &cfg).unwrap();
         assert_eq!(sent, 1);
@@ -427,7 +238,7 @@ mod tests {
             captures: vec![staged],
             clip: None,
         };
-        let scene_obj = scene_for("ui");
+        let scene_obj = scene_with("ui", &[], None);
         let failing = config_with(dir.path(), fail_always);
         assert!(scene_obj.deliver_report(&mut report, &failing).is_err());
         let still_old = std::fs::read(delivered.delivered_path(dir.path())).unwrap();
@@ -478,7 +289,7 @@ mod tests {
             captures: vec![staged],
             clip: None,
         };
-        let scene_obj = scene_for("ui");
+        let scene_obj = scene_with("ui", &[], None);
         let cfg = config_with(dir.path(), no_credentials);
         let sent = scene_obj.deliver_report(&mut report, &cfg).unwrap();
         assert_eq!(sent, 0);
@@ -529,7 +340,7 @@ mod tests {
             captures: staged,
             clip: None,
         };
-        let scene_obj = scene_for("ui");
+        let scene_obj = scene_with("ui", &[], None);
         let failing = config_with(dir.path(), fail_on_single_chunk);
         assert!(scene_obj.deliver_report(&mut report, &failing).is_err());
         for index in 0..10 {
@@ -582,7 +393,7 @@ mod tests {
             captures: vec![staged],
             clip: None,
         };
-        let scene_obj = scene_for("ui");
+        let scene_obj = scene_with("ui", &[], None);
         let cfg = config_with(dir.path(), recording_send);
         unsafe { std::env::set_var("LELE_PREVIEW_DRY_RUN", "1") };
         let sent = scene_obj.deliver_report(&mut report, &cfg).unwrap();
@@ -606,7 +417,7 @@ mod tests {
             captures: vec![staged],
             clip: None,
         };
-        let scene_obj = scene_for("ui");
+        let scene_obj = scene_with("ui", &[], None);
         let cfg = config_with(dir.path(), recording_send);
         unsafe { std::env::set_var("LELE_PREVIEW_DRY_RUN", "1") };
         let sent = scene_obj.deliver_report(&mut report, &cfg).unwrap();
@@ -640,7 +451,7 @@ mod tests {
             captures: vec![staged],
             clip: None,
         };
-        let scene_obj = scene_for("ui");
+        let scene_obj = scene_with("ui", &[], None);
         let cfg = config_with(dir.path(), recording_send);
         let sent = scene_obj.deliver_report(&mut report, &cfg).unwrap();
         assert_eq!(sent, 0);
@@ -676,7 +487,7 @@ mod tests {
             captures: vec![staged_one, staged_two],
             clip: None,
         };
-        let scene_obj = scene_for("ui");
+        let scene_obj = scene_with("ui", &[], None);
         let cfg = config_with(dir.path(), recording_send);
         unsafe { std::env::set_var("LELE_PREVIEW_DRY_RUN", "1") };
         let sent = scene_obj.deliver_report(&mut report, &cfg).unwrap();
@@ -722,7 +533,7 @@ mod tests {
             captures: vec![staged],
             clip: None,
         };
-        let scene_obj = scene_for("ui");
+        let scene_obj = scene_with("ui", &[], None);
         let cfg = config_with(dir.path(), recording_send);
         let result = scene_obj.deliver_report(&mut report, &cfg);
         assert!(
@@ -832,14 +643,13 @@ mod tests {
                             captures: vec![capture],
                             clip: None,
                         };
-                        let log_path = path.join(format!("test-sent-{thread}.log"));
-                        let send = file_recording_send_with_log(&log_path);
+                        let send = file_recording_send;
                         let cfg = preview::Config {
                             out_dir: path.clone(),
                             send_preview_group: send,
                             ..preview::Config::default()
                         };
-                        let _ = scene_for(&name).deliver_report(&mut report, &cfg);
+                        let _ = scene_with(&name, &[], None).deliver_report(&mut report, &cfg);
                     }
                 });
             }
@@ -860,12 +670,6 @@ mod tests {
             );
         }
         no_staging_left(&path);
-    }
-
-    fn file_recording_send_with_log(
-        _log_path: &PathBuf,
-    ) -> fn(&[&deliver::Capture], &str) -> Result<usize, Error> {
-        file_recording_send
     }
 
     #[test]
@@ -890,7 +694,7 @@ mod tests {
                             clip: None,
                         };
                         let cfg = config_with(&path, file_recording_send);
-                        let _ = scene_for("shared").deliver_report(&mut report, &cfg);
+                        let _ = scene_with("shared", &[], None).deliver_report(&mut report, &cfg);
                     }
                 });
             }
@@ -936,7 +740,7 @@ mod tests {
                 send_preview_group: file_recording_send,
                 ..preview::Config::default()
             };
-            let _ = scene_for(&scene_name).deliver_report(&mut report, &config);
+            let _ = scene_with(&scene_name, &[], None).deliver_report(&mut report, &config);
         }
     }
 
@@ -1006,7 +810,7 @@ mod tests {
             captures: vec![staged_one, staged_two],
             clip: None,
         };
-        let scene_obj = scene_for("ui");
+        let scene_obj = scene_with("ui", &[], None);
         let cfg = config_with(dir.path(), recording_send);
         let sent = scene_obj.deliver_report(&mut report, &cfg).unwrap();
         assert_eq!(sent, 2);
@@ -1046,7 +850,7 @@ mod tests {
             captures: vec![staged_same, staged_changed],
             clip: None,
         };
-        let scene_obj = scene_for("ui");
+        let scene_obj = scene_with("ui", &[], None);
         let cfg = config_with(dir.path(), recording_send);
         let sent = scene_obj.deliver_report(&mut report, &cfg).unwrap();
         assert_eq!(sent, 2);
@@ -1079,7 +883,7 @@ mod tests {
             captures: vec![staged],
             clip: None,
         };
-        let scene_obj = scene_for("ui");
+        let scene_obj = scene_with("ui", &[], None);
         let cfg = config_with(dir.path(), recording_send);
         let sent = scene_obj.deliver_report(&mut report, &cfg).unwrap();
         assert_eq!(sent, 1, "unwritable log must never fail a delivery");

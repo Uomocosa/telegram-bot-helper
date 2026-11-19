@@ -31,18 +31,7 @@ pub fn pixel_diff_against_baseline(
 mod tests {
     use super::pixel_diff_against_baseline;
     use crate::deliver;
-    use crate::scene;
-
-    fn artifact(pixel_hash: &str) -> deliver::Artifact {
-        deliver::Artifact {
-            scene: String::from("ui"),
-            label: String::from("rest"),
-            fingerprint: deliver::Artifact::fingerprint_of("ui", "rest"),
-            pixel_hash: String::from(pixel_hash),
-            media: deliver::Media::Png,
-            kind: scene::Kind::System,
-        }
-    }
+    use crate::testing::artifact;
 
     #[test]
     fn test_usage() {
@@ -50,7 +39,7 @@ mod tests {
         let missing = dir.path().join("missing.png");
         assert!(
             pixel_diff_against_baseline(
-                &artifact("unused"),
+                &artifact("ui", "rest", "unused"),
                 dir.path(),
                 &missing,
                 &deliver::DriftTolerance::default(),
@@ -61,7 +50,11 @@ mod tests {
         let baseline = image::RgbaImage::from_pixel(4, 4, image::Rgba([10, 12, 16, 255]));
         let staged = dir.path().join("staged.png");
         baseline.save(&staged).unwrap();
-        let delivered = artifact(&deliver::Artifact::hash_png_pixels(&staged).unwrap());
+        let delivered = artifact(
+            "ui",
+            "rest",
+            &deliver::Artifact::hash_png_pixels(&staged).unwrap(),
+        );
         baseline.save(delivered.delivered_path(dir.path())).unwrap();
         let diff = pixel_diff_against_baseline(
             &delivered,

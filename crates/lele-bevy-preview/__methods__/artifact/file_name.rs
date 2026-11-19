@@ -17,28 +17,15 @@ pub fn file_name(artifact: &deliver::Artifact) -> String {
 mod tests {
     use super::file_name;
     use crate::deliver;
-    use crate::scene;
-
-    fn artifact(media: deliver::Media) -> deliver::Artifact {
-        deliver::Artifact {
-            scene: String::from("ui"),
-            label: String::from("Hover Here"),
-            fingerprint: String::new(),
-            pixel_hash: String::new(),
-            media,
-            kind: scene::Kind::System,
-        }
-    }
+    use crate::testing::artifact;
 
     #[test]
     fn test_usage() {
-        assert_eq!(
-            file_name(&artifact(deliver::Media::Png)),
-            "ui__hover_here.png"
-        );
-        assert_eq!(
-            file_name(&artifact(deliver::Media::Mp4)),
-            "ui__hover_here.mp4"
-        );
+        let mut png = artifact("ui", "Hover Here", "");
+        png.media = deliver::Media::Png;
+        assert_eq!(file_name(&png), "ui__hover_here.png");
+        let mut mp4 = artifact("ui", "Hover Here", "");
+        mp4.media = deliver::Media::Mp4;
+        assert_eq!(file_name(&mp4), "ui__hover_here.mp4");
     }
 }

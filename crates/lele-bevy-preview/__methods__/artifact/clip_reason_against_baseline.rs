@@ -51,34 +51,17 @@ pub fn clip_reason_against_baseline(
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-
     use super::clip_reason_against_baseline;
     use crate::deliver;
     use crate::scene;
-
-    fn artifact(scene: &str, label: &str, pixel_hash: &str) -> deliver::Artifact {
-        deliver::Artifact {
-            scene: String::from(scene),
-            label: String::from(label),
-            fingerprint: deliver::Artifact::fingerprint_of(scene, label),
-            pixel_hash: String::from(pixel_hash),
-            media: deliver::Media::Mp4,
-            kind: scene::Kind::System,
-        }
-    }
-
-    fn write_solid(path: &Path, red: u8) -> String {
-        image::RgbaImage::from_pixel(4, 4, image::Rgba([red, 0, 0, 255]))
-            .save(path)
-            .unwrap();
-        deliver::Artifact::hash_png_pixels(path).unwrap()
-    }
+    use crate::testing::artifact;
+    use crate::testing::solid_png;
 
     #[test]
     fn test_usage() {
         let dir = tempfile::tempdir().unwrap();
-        let item = artifact("ui", "clip", "unused");
+        let mut item = artifact("ui", "clip", "unused");
+        item.media = deliver::Media::Mp4;
         assert_eq!(
             clip_reason_against_baseline(&item, dir.path(), 30).unwrap(),
             deliver::Reason::NoBaseline
@@ -112,8 +95,8 @@ mod tests {
         .unwrap();
         let frames_dir = deliver::Artifact::delivered_frames_dir(dir.path(), "ui");
         std::fs::create_dir_all(&frames_dir).unwrap();
-        let first = write_solid(&frames_dir.join("0001.png"), 10);
-        let second = write_solid(&frames_dir.join("0002.png"), 20);
+        let first = solid_png(&frames_dir.join("0001.png"), 10, 0, 0);
+        let second = solid_png(&frames_dir.join("0002.png"), 20, 0, 0);
         let pixel_hash = scene::Scene::clip_hash(30, &[first, second]);
         let item = artifact("ui", "clip", &pixel_hash);
         assert_eq!(
@@ -132,7 +115,7 @@ mod tests {
         .unwrap();
         let frames_dir = deliver::Artifact::delivered_frames_dir(dir.path(), "ui");
         std::fs::create_dir_all(&frames_dir).unwrap();
-        write_solid(&frames_dir.join("0001.png"), 10);
+        solid_png(&frames_dir.join("0001.png"), 10, 0, 0);
         let item = artifact("ui", "clip", "stale-hash");
         assert_eq!(
             clip_reason_against_baseline(&item, dir.path(), 30).unwrap(),

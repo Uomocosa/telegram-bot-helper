@@ -41,90 +41,19 @@ pub fn reason_against_baseline_with(
 
 #[cfg(test)]
 mod tests {
-    use std::path::{Path, PathBuf};
-
     use super::reason_against_baseline_with;
     use crate::deliver;
-    use crate::scene;
+    use crate::testing::canvas;
+    use crate::testing::reason_for;
+    use crate::testing::staged_artifact;
+    use crate::testing::with_bordered_square;
+    use crate::testing::with_horizontal_border;
+    use crate::testing::with_square;
+    use crate::testing::with_vertical_border;
 
-    const BACKGROUND: image::Rgba<u8> = image::Rgba([10, 12, 16, 255]);
     const LINE: image::Rgba<u8> = image::Rgba([250, 250, 250, 255]);
     const RED: image::Rgba<u8> = image::Rgba([200, 40, 40, 255]);
     const BLUE: image::Rgba<u8> = image::Rgba([40, 40, 200, 255]);
-
-    fn canvas(width: u32, height: u32) -> image::RgbaImage {
-        image::RgbaImage::from_pixel(width, height, BACKGROUND)
-    }
-
-    fn artifact_and_staged(new: &image::RgbaImage, dir: &Path) -> (deliver::Artifact, PathBuf) {
-        let new_path = dir.join("staged.png");
-        new.save(&new_path).unwrap();
-        let artifact = deliver::Artifact {
-            scene: String::from("ui"),
-            label: String::from("rest"),
-            fingerprint: deliver::Artifact::fingerprint_of("ui", "rest"),
-            pixel_hash: deliver::Artifact::hash_png_pixels(&new_path).unwrap(),
-            media: deliver::Media::Png,
-            kind: scene::Kind::System,
-        };
-        (artifact, new_path)
-    }
-
-    fn reason_for(
-        baseline: &image::RgbaImage,
-        new: &image::RgbaImage,
-        is_exact: bool,
-    ) -> deliver::Reason {
-        let dir = tempfile::tempdir().unwrap();
-        let (artifact, new_path) = artifact_and_staged(new, dir.path());
-        baseline.save(artifact.delivered_path(dir.path())).unwrap();
-        reason_against_baseline_with(
-            &artifact,
-            dir.path(),
-            &new_path,
-            &deliver::DriftTolerance::default(),
-            is_exact,
-        )
-        .unwrap()
-    }
-
-    fn with_horizontal_border(y: u32) -> image::RgbaImage {
-        let mut image = canvas(24, 24);
-        for x in 0..24 {
-            image.put_pixel(x, y, LINE);
-        }
-        image
-    }
-
-    fn with_vertical_border(x: u32) -> image::RgbaImage {
-        let mut image = canvas(24, 24);
-        for y in 0..24 {
-            image.put_pixel(x, y, LINE);
-        }
-        image
-    }
-
-    fn with_bordered_square(colour: image::Rgba<u8>) -> image::RgbaImage {
-        let mut image = canvas(24, 24);
-        for y in 0..24 {
-            for x in 0..24 {
-                if !(3..21).contains(&x) || !(3..21).contains(&y) {
-                    image.put_pixel(x, y, colour);
-                }
-            }
-        }
-        image
-    }
-
-    fn with_square(x_start: u32, y_start: u32) -> image::RgbaImage {
-        let mut image = canvas(24, 24);
-        for y in y_start..y_start.saturating_add(10) {
-            for x in x_start..x_start.saturating_add(10) {
-                image.put_pixel(x, y, LINE);
-            }
-        }
-        image
-    }
 
     #[test]
     fn test_usage() {
@@ -298,7 +227,8 @@ mod tests {
     #[test]
     fn test_missing_delivered_is_no_baseline() {
         let dir = tempfile::tempdir().unwrap();
-        let (artifact, new_path) = artifact_and_staged(&canvas(8, 8), dir.path());
+        let artifact = staged_artifact(&canvas(8, 8), dir.path());
+        let new_path = dir.path().join("staged.png");
         assert_eq!(
             reason_against_baseline_with(
                 &artifact,

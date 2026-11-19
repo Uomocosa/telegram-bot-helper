@@ -9,6 +9,8 @@ pub mod media_group;
 mod methods;
 pub mod telegram_bot;
 pub mod test_log;
+#[cfg(test)]
+pub(crate) mod testing;
 pub use api_response::ApiResponse;
 pub use basic::enums::MediaKind;
 pub use basic::structs::MediaItem;

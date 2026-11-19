@@ -44,14 +44,7 @@ pub fn send_text(bot: &TelegramBot, text: &str) -> Result<String, Error> {
 mod tests {
     use super::send_text;
     use crate::Error;
-    use crate::TelegramBot;
-
-    fn bot() -> TelegramBot {
-        TelegramBot {
-            token: String::from("123:test"),
-            chat_id: String::from("1"),
-        }
-    }
+    use crate::testing::bot;
 
     #[test]
     fn test_usage() {

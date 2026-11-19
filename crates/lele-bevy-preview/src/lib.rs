@@ -16,6 +16,9 @@ pub mod report;
 pub mod scene;
 pub mod timeline;
 
+#[cfg(test)]
+pub(crate) mod testing;
+
 pub use preview_app::PreviewApp;
 pub use report::Report;
 

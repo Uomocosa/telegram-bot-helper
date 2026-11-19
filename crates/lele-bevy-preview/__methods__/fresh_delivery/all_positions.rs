@@ -19,38 +19,25 @@ pub fn all_positions(fresh: &deliver::FreshDelivery) -> Vec<(usize, bool)> {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-
     use super::all_positions;
     use crate::deliver;
-    use crate::scene;
-
-    fn artifact(scene: &str, label: &str, pixel_hash: &str) -> deliver::Artifact {
-        deliver::Artifact {
-            scene: String::from(scene),
-            label: String::from(label),
-            fingerprint: deliver::Artifact::fingerprint_of(scene, label),
-            pixel_hash: String::from(pixel_hash),
-            media: deliver::Media::Png,
-            kind: scene::Kind::System,
-        }
-    }
-
-    fn capture(label: &str) -> deliver::Capture {
-        deliver::Capture {
-            path: PathBuf::from("shot.png"),
-            artifact: artifact("ui", label, "hash"),
-            status: deliver::Status::New,
-        }
-    }
+    use crate::testing::capture;
 
     #[test]
     fn test_usage() {
         let with_clip = deliver::FreshDelivery {
-            captures: vec![capture("a"), capture("b")],
+            captures: vec![
+                capture("shot.png", "a", deliver::Media::Png, deliver::Status::New),
+                capture("shot.png", "b", deliver::Media::Png, deliver::Status::New),
+            ],
             reasons: vec![deliver::Reason::NoBaseline, deliver::Reason::NoBaseline],
             diffs: Vec::new(),
-            clip: Some(capture("clip")),
+            clip: Some(capture(
+                "shot.png",
+                "clip",
+                deliver::Media::Png,
+                deliver::Status::New,
+            )),
             clip_reason: Some(deliver::Reason::NoBaseline),
         };
         assert_eq!(

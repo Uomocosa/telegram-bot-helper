@@ -15,29 +15,10 @@ pub fn clip_status_against_baseline(
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-
     use super::clip_status_against_baseline;
     use crate::deliver;
-    use crate::scene;
-
-    fn artifact(scene: &str, label: &str, pixel_hash: &str) -> deliver::Artifact {
-        deliver::Artifact {
-            scene: String::from(scene),
-            label: String::from(label),
-            fingerprint: deliver::Artifact::fingerprint_of(scene, label),
-            pixel_hash: String::from(pixel_hash),
-            media: deliver::Media::Png,
-            kind: scene::Kind::System,
-        }
-    }
-
-    fn write_solid(path: &Path, red: u8) -> String {
-        image::RgbaImage::from_pixel(4, 4, image::Rgba([red, 0, 0, 255]))
-            .save(path)
-            .unwrap();
-        deliver::Artifact::hash_png_pixels(path).unwrap()
-    }
+    use crate::testing::artifact;
+    use crate::testing::solid_png;
 
     #[test]
     fn test_usage() {
@@ -47,7 +28,7 @@ mod tests {
             clip_status_against_baseline(&item, dir.path(), 30).unwrap(),
             deliver::Status::New
         );
-        let _ = write_solid(&item.delivered_path(dir.path()), 10);
+        let _ = solid_png(&item.delivered_path(dir.path()), 10, 0, 0);
         assert_eq!(
             clip_status_against_baseline(&item, dir.path(), 30).unwrap(),
             deliver::Status::New

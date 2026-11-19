@@ -28,28 +28,18 @@ pub fn record_decision(
 mod tests {
     use super::record_decision;
     use crate::deliver;
-    use crate::scene;
-
-    fn capture(label: &str, status: deliver::Status) -> deliver::Capture {
-        deliver::Capture {
-            path: std::path::PathBuf::from("out/ui__one.png"),
-            artifact: deliver::Artifact {
-                scene: String::from("ui"),
-                label: label.to_string(),
-                fingerprint: deliver::Artifact::fingerprint_of("ui", label),
-                pixel_hash: String::from("h"),
-                media: deliver::Media::Png,
-                kind: scene::Kind::System,
-            },
-            status,
-        }
-    }
+    use crate::testing::capture;
 
     #[test]
     fn test_usage() {
         let dir = tempfile::tempdir().unwrap();
         let log = deliver::DeliveryLog::from_out_dir_and_scene(dir.path(), "ui");
-        let seen = capture("one room", deliver::Status::Same);
+        let seen = capture(
+            "out/ui__one.png",
+            "one room",
+            deliver::Media::Png,
+            deliver::Status::Same,
+        );
         record_decision(&log, &seen, deliver::Reason::DriftWithinTolerance, None);
         let text = std::fs::read_to_string(&log.path).unwrap();
         assert!(text.contains("event=decision"));

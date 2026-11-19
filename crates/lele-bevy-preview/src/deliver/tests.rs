@@ -3,32 +3,9 @@ mod tests {
     use crate::deliver;
     use crate::preview;
     use crate::scene;
-    use std::path::PathBuf;
-
-    fn solid_png(path: &std::path::Path, red: u8, green: u8, blue: u8) -> String {
-        let image = image::RgbaImage::from_pixel(8, 8, image::Rgba([red, green, blue, 255]));
-        image.save(path).unwrap();
-        deliver::Artifact::hash_png_pixels(path).unwrap()
-    }
-
-    fn artifact(scene: &str, label: &str, pixels: &str) -> deliver::Artifact {
-        deliver::Artifact {
-            scene: scene.to_string(),
-            label: label.to_string(),
-            fingerprint: deliver::Artifact::fingerprint_of(scene, label),
-            pixel_hash: pixels.to_string(),
-            media: deliver::Media::Png,
-            kind: scene::Kind::System,
-        }
-    }
-
-    fn capture(label: &str, status: deliver::Status) -> deliver::Capture {
-        deliver::Capture {
-            path: PathBuf::from(format!("out/{label}.png")),
-            artifact: artifact("ui", label, "hash"),
-            status,
-        }
-    }
+    use crate::testing::artifact;
+    use crate::testing::capture;
+    use crate::testing::solid_png;
 
     #[test]
     fn test_usage() {
@@ -50,9 +27,33 @@ mod tests {
             deliver::Artifact::hash_bytes(b"abc").len(),
             deliver::HASH_CHARS
         );
-        assert!(capture("rest", deliver::Status::Changed).is_sendable());
-        assert!(capture("rest", deliver::Status::New).is_sendable());
-        assert!(!capture("rest", deliver::Status::Same).is_sendable());
+        assert!(
+            capture(
+                "out/rest.png",
+                "rest",
+                deliver::Media::Png,
+                deliver::Status::Changed
+            )
+            .is_sendable()
+        );
+        assert!(
+            capture(
+                "out/rest.png",
+                "rest",
+                deliver::Media::Png,
+                deliver::Status::New
+            )
+            .is_sendable()
+        );
+        assert!(
+            !capture(
+                "out/rest.png",
+                "rest",
+                deliver::Media::Png,
+                deliver::Status::Same
+            )
+            .is_sendable()
+        );
     }
 
     #[test]

@@ -24,37 +24,13 @@ pub fn stash_positions_to_unsent(
 
 #[cfg(test)]
 mod tests {
-    use std::path::{Path, PathBuf};
+    use std::path::Path;
 
     use super::stash_positions_to_unsent;
     use crate::deliver;
     use crate::preview;
-    use crate::scene;
-
-    fn scene_named(name: &str) -> scene::Scene {
-        scene::Scene {
-            name: String::from(name),
-            kind: scene::Kind::System,
-            build: |_app| {},
-            states: Vec::new(),
-            timeline: None,
-        }
-    }
-
-    fn capture(path: PathBuf, label: &str, status: deliver::Status) -> deliver::Capture {
-        deliver::Capture {
-            path,
-            artifact: deliver::Artifact {
-                scene: String::from("ui"),
-                label: String::from(label),
-                fingerprint: deliver::Artifact::fingerprint_of("ui", label),
-                pixel_hash: String::from("hash"),
-                media: deliver::Media::Png,
-                kind: scene::Kind::System,
-            },
-            status,
-        }
-    }
+    use crate::testing::capture;
+    use crate::testing::scene_with;
 
     #[test]
     fn test_usage() {
@@ -68,8 +44,18 @@ mod tests {
         std::fs::write(&same_path, b"same").unwrap();
         let mut fresh = deliver::FreshDelivery {
             captures: vec![
-                capture(changed_path.clone(), "rest", deliver::Status::Changed),
-                capture(same_path.clone(), "idle", deliver::Status::Same),
+                capture(
+                    changed_path.clone(),
+                    "rest",
+                    deliver::Media::Png,
+                    deliver::Status::Changed,
+                ),
+                capture(
+                    same_path.clone(),
+                    "idle",
+                    deliver::Media::Png,
+                    deliver::Status::Same,
+                ),
             ],
             reasons: vec![
                 deliver::Reason::ClustersExceedDrift,
@@ -84,7 +70,7 @@ mod tests {
             ..preview::Config::default()
         };
         stash_positions_to_unsent(
-            &scene_named("ui"),
+            &scene_with("ui", &[], None),
             &mut fresh,
             &[(0, false), (1, false), (9, false)],
             &config,

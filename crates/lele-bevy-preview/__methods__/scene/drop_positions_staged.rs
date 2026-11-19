@@ -30,37 +30,13 @@ pub fn drop_positions_staged(
 
 #[cfg(test)]
 mod tests {
-    use std::path::{Path, PathBuf};
+    use std::path::Path;
 
     use super::drop_positions_staged;
     use crate::deliver;
     use crate::preview;
-    use crate::scene;
-
-    fn scene_named(name: &str) -> scene::Scene {
-        scene::Scene {
-            name: String::from(name),
-            kind: scene::Kind::System,
-            build: |_app| {},
-            states: Vec::new(),
-            timeline: None,
-        }
-    }
-
-    fn capture(path: PathBuf, label: &str, status: deliver::Status) -> deliver::Capture {
-        deliver::Capture {
-            path,
-            artifact: deliver::Artifact {
-                scene: String::from("ui"),
-                label: String::from(label),
-                fingerprint: deliver::Artifact::fingerprint_of("ui", label),
-                pixel_hash: String::from("hash"),
-                media: deliver::Media::Png,
-                kind: scene::Kind::System,
-            },
-            status,
-        }
-    }
+    use crate::testing::capture;
+    use crate::testing::scene_with;
 
     #[test]
     fn test_usage() {
@@ -73,10 +49,20 @@ mod tests {
         std::fs::write(&shot, b"shot").unwrap();
         std::fs::write(&clip_shot, b"clip").unwrap();
         let mut fresh = deliver::FreshDelivery {
-            captures: vec![capture(shot.clone(), "rest", deliver::Status::Changed)],
+            captures: vec![capture(
+                shot.clone(),
+                "rest",
+                deliver::Media::Png,
+                deliver::Status::Changed,
+            )],
             reasons: vec![deliver::Reason::ClustersExceedDrift],
             diffs: Vec::new(),
-            clip: Some(capture(clip_shot.clone(), "clip", deliver::Status::Changed)),
+            clip: Some(capture(
+                clip_shot.clone(),
+                "clip",
+                deliver::Media::Png,
+                deliver::Status::Changed,
+            )),
             clip_reason: Some(deliver::Reason::ClustersExceedDrift),
         };
         let unsent = fresh.captures[0].artifact.unsent_path(&out);
@@ -87,7 +73,7 @@ mod tests {
             ..preview::Config::default()
         };
         drop_positions_staged(
-            &scene_named("ui"),
+            &scene_with("ui", &[], None),
             &mut fresh,
             &[(0, false), (0, true)],
             &config,
