@@ -54,28 +54,19 @@ mod tests {
                         children![Text::new("pinned at 24/24")],
                     ));
                 });
-                app.add_systems(Update, center_roots);
+                app.add_systems(
+                    Update,
+                    center_roots.run_if(lele_bevy_preview::scene::Clock::is_started),
+                );
             },
             states: vec![
                 lele_bevy_preview::scene::State {
-                    label: String::from("one pinned root, centred"),
+                    label: String::from("pinned in the corner"),
                     apply: |_world: &mut World| {},
                 },
                 lele_bevy_preview::scene::State {
-                    label: String::from("a second pinned root, also centred"),
-                    apply: |world: &mut World| {
-                        world.spawn((
-                            Node {
-                                position_type: PositionType::Absolute,
-                                top: Val::Px(24.0),
-                                left: Val::Px(24.0),
-                                padding: UiRect::axes(Val::Px(16.0), Val::Px(10.0)),
-                                ..default()
-                            },
-                            BackgroundColor(Color::srgb(0.15, 0.55, 0.35)),
-                            children![Text::new("pinned at 24/24 again")],
-                        ));
-                    },
+                    label: String::from("centred"),
+                    apply: lele_bevy_preview::scene::Clock::start,
                 },
             ],
             timeline: None,
@@ -89,8 +80,7 @@ mod tests {
         let [before, after] = report.captures.as_slice() else {
             panic!("expected two captures");
         };
-        before.assert_centered(2).expect("centred");
+        assert!(before.assert_centered(2).is_err());
         after.assert_centered(2).expect("centred");
-        assert_ne!(before.artifact.pixel_hash, after.artifact.pixel_hash);
     }
 }

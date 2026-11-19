@@ -21,6 +21,7 @@ pub struct Scene {
 #[atomic_delegates]
 impl Scene {
     pub fn centered_root() -> bevy::prelude::Node {}
+    pub fn hover<C: bevy::prelude::Component>(world: &mut bevy::prelude::World) {}
     #[must_use]
     pub fn scratch_dir(&self, config: &preview::Config) -> PathBuf {}
     pub fn check(&self) -> Result<(), Error> {}

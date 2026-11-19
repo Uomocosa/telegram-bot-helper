@@ -7,6 +7,7 @@ use crate::scene;
 #[must_use]
 pub fn from_scene(scene: &scene::Scene, config: &preview::Config) -> PreviewApp {
     let mut app = App::new();
+    app.init_resource::<scene::Clock>();
     (scene.build)(&mut app);
     let target = PreviewApp::install_harness(&mut app, config);
     PreviewApp {
