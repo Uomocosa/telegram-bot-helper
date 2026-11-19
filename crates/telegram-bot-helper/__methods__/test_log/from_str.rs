@@ -20,11 +20,11 @@ pub fn from_str(test_name: &str) -> TestLog {
 
 #[cfg(test)]
 mod tests {
-    use crate::TestLog;
+    use super::from_str;
 
     #[test]
     fn test_usage() {
-        let log = TestLog::from("test_log_open_smoke");
+        let log = from_str("test_log_open_smoke");
         let name = log.path.to_string_lossy();
         assert!(name.contains("test_log_open_smoke-"));
         assert!(name.ends_with(".log"));

@@ -50,6 +50,7 @@ mod tests {
     fn test_usage() {
         let err = Error::EmptyPayload { op: "send_text" };
         assert_eq!(format!("{err}"), "telegram send_text: empty payload");
+        assert_eq!(err.with_causes(), "telegram send_text: empty payload");
         let err = Error::NotPng {
             path: "preview.png".to_string(),
         };

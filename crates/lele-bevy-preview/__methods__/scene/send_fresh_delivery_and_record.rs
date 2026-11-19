@@ -79,10 +79,38 @@ pub fn send_fresh_delivery_and_record(
 
 #[cfg(test)]
 mod tests {
+    use crate::deliver;
+    use crate::testing::config_with;
+    use crate::testing::recording_send;
+    use crate::testing::scene_with;
+    use crate::testing::staging_capture;
+
     use super::send_fresh_delivery_and_record;
 
     #[test]
     fn test_usage() {
-        let _ = send_fresh_delivery_and_record;
+        let dir = tempfile::tempdir().unwrap();
+        let staging_root = deliver::Artifact::staging_root(dir.path(), "ui");
+        let config = config_with(dir.path(), recording_send);
+        let scene = scene_with("ui", &[], None);
+        let mut fresh = deliver::FreshDelivery {
+            captures: vec![staging_capture(
+                dir.path(),
+                "ui",
+                "one",
+                9,
+                9,
+                9,
+                deliver::Status::Changed,
+            )],
+            reasons: vec![deliver::Reason::NoBaseline],
+            diffs: vec![None],
+            clip: None,
+            clip_reason: None,
+        };
+        let log = deliver::DeliveryLog::from_out_dir_and_scene(dir.path(), "ui");
+        let sent = send_fresh_delivery_and_record(&scene, &mut fresh, &config, &staging_root, &log)
+            .unwrap();
+        assert_eq!(sent, 1);
     }
 }

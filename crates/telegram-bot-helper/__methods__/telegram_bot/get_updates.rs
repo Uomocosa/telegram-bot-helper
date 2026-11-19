@@ -44,12 +44,4 @@ pub fn get_updates(
     .map(|result| result.as_array().cloned().unwrap_or_default())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::get_updates;
-
-    #[test]
-    fn test_usage() {
-        let _ = get_updates;
-    }
-}
+// no test_usage necessary

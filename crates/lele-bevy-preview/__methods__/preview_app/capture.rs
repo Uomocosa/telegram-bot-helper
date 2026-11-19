@@ -25,10 +25,20 @@ pub fn capture(
 
 #[cfg(test)]
 mod tests {
-    use super::capture;
+    use crate::PreviewApp;
+    use crate::testing::fast_config;
+    use crate::testing::scene_with;
 
     #[test]
     fn test_usage() {
-        let _ = capture;
+        let dir = tempfile::tempdir().unwrap();
+        let mut app = PreviewApp::from_scene(
+            &scene_with("demo", &["one room"], None),
+            &fast_config(dir.path()),
+        );
+        let out = dir.path().join("frame.png");
+        let image = app.capture(&out, 240).unwrap();
+        assert!(matches!(image.bytes(), [_, ..]));
+        assert!(out.exists());
     }
 }

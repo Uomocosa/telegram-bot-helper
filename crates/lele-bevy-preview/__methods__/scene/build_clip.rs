@@ -52,10 +52,22 @@ pub fn build_clip(
 
 #[cfg(test)]
 mod tests {
+    use crate::deliver;
+    use crate::testing::fast_config;
+    use crate::testing::scene_with;
+
     use super::build_clip;
 
     #[test]
     fn test_usage() {
-        let _ = build_clip;
+        let dir = tempfile::tempdir().unwrap();
+        let staging = deliver::Artifact::staging_root(dir.path(), "ui");
+        let clip = build_clip(
+            &scene_with("ui", &["rest"], None),
+            &fast_config(dir.path()),
+            &staging,
+        )
+        .unwrap();
+        assert!(clip.is_none());
     }
 }

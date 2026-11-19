@@ -91,10 +91,29 @@ pub fn deliver_report(
 
 #[cfg(test)]
 mod tests {
+    use crate::Report;
+    use crate::deliver;
+    use crate::testing::config_with;
+    use crate::testing::recording_send;
+    use crate::testing::scene_with;
+    use crate::testing::staging_capture;
+
     use super::deliver_report;
 
     #[test]
     fn test_usage() {
-        let _ = deliver_report;
+        let dir = tempfile::tempdir().unwrap();
+        let staged = staging_capture(dir.path(), "ui", "one", 9, 9, 9, deliver::Status::Changed);
+        let mut report = Report {
+            captures: vec![staged],
+            clip: None,
+        };
+        let sent = deliver_report(
+            &scene_with("ui", &[], None),
+            &mut report,
+            &config_with(dir.path(), recording_send),
+        )
+        .unwrap();
+        assert_eq!(sent, 1);
     }
 }

@@ -19,10 +19,24 @@ pub fn send_one(capture: &deliver::Capture, caption: &str) -> Result<bool, Error
 
 #[cfg(test)]
 mod tests {
+    use crate::deliver;
+    use crate::testing::capture;
+
     use super::send_one;
 
     #[test]
     fn test_usage() {
-        let _ = send_one;
+        unsafe { std::env::set_var("TELEGRAM_BOT_TOKEN", "") };
+        unsafe { std::env::set_var("TELEGRAM_CHAT_ID", "") };
+        let item = capture(
+            "shot.png",
+            "rest",
+            deliver::Media::Png,
+            deliver::Status::New,
+        );
+        let sent = send_one(&item, "caption").unwrap();
+        unsafe { std::env::remove_var("TELEGRAM_BOT_TOKEN") };
+        unsafe { std::env::remove_var("TELEGRAM_CHAT_ID") };
+        assert!(!sent);
     }
 }

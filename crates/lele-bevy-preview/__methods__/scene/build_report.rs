@@ -23,10 +23,20 @@ pub fn build_report(scene: &scene::Scene, config: &preview::Config) -> Result<Re
 
 #[cfg(test)]
 mod tests {
+    use crate::testing::fast_config;
+    use crate::testing::scene_with;
+
     use super::build_report;
 
     #[test]
     fn test_usage() {
-        let _ = build_report;
+        let dir = tempfile::tempdir().unwrap();
+        let report = build_report(
+            &scene_with("ui", &["one room"], None),
+            &fast_config(dir.path()),
+        )
+        .unwrap();
+        assert_eq!(report.captures.len(), 1);
+        assert!(report.clip.is_none());
     }
 }

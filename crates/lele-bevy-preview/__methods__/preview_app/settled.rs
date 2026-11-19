@@ -33,10 +33,20 @@ pub fn settled(
 
 #[cfg(test)]
 mod tests {
-    use super::settled;
+    use crate::PreviewApp;
+    use crate::testing::fast_config;
+    use crate::testing::scene_with;
 
     #[test]
     fn test_usage() {
-        let _ = settled;
+        let dir = tempfile::tempdir().unwrap();
+        let mut app = PreviewApp::from_scene(
+            &scene_with("demo", &["one room"], None),
+            &fast_config(dir.path()),
+        );
+        let out = dir.path().join("settled.png");
+        let image = app.settled(&out, 240, 1).unwrap();
+        assert!(matches!(image.bytes(), [_, ..]));
+        assert!(out.exists());
     }
 }

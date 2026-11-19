@@ -22,10 +22,23 @@ pub fn install_harness(app: &mut App, config: &preview::Config) -> Handle<Image>
 
 #[cfg(test)]
 mod tests {
+    use bevy::prelude::{App, ClearColor};
+
+    use crate::testing::fast_config;
+
     use super::install_harness;
 
     #[test]
     fn test_usage() {
-        let _ = install_harness;
+        let dir = tempfile::tempdir().unwrap();
+        let config = fast_config(dir.path());
+        let mut app = App::new();
+        let target = install_harness(&mut app, &config);
+        assert_ne!(target, bevy::prelude::Handle::default());
+        assert!(
+            app.world()
+                .contains_resource::<bevy::time::TimeUpdateStrategy>()
+        );
+        assert!(app.world().contains_resource::<ClearColor>());
     }
 }

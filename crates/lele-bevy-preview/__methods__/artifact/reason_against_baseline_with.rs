@@ -56,7 +56,7 @@ mod tests {
     const BLUE: image::Rgba<u8> = image::Rgba([40, 40, 200, 255]);
 
     #[test]
-    fn test_usage() {
+    fn test_same_pixels_are_pixel_hash_equal_in_both_modes() {
         let baseline = canvas(24, 24);
         assert_eq!(
             reason_for(&baseline, &baseline, false),
@@ -225,7 +225,7 @@ mod tests {
     }
 
     #[test]
-    fn test_missing_delivered_is_no_baseline() {
+    fn test_usage() {
         let dir = tempfile::tempdir().unwrap();
         let artifact = staged_artifact(&canvas(8, 8), dir.path());
         let new_path = dir.path().join("staged.png");

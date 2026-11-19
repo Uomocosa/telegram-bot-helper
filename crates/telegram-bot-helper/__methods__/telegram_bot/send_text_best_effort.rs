@@ -15,7 +15,9 @@ mod tests {
     use super::send_text_best_effort;
 
     #[test]
-    fn test_usage() {
+    fn sending_text_without_credentials_does_not_panic() {
         send_text_best_effort("");
     }
 }
+
+// no test_usage necessary

@@ -29,10 +29,23 @@ pub fn render_states(
 
 #[cfg(test)]
 mod tests {
+    use crate::deliver;
+    use crate::testing::fast_config;
+    use crate::testing::scene_with;
+
     use super::render_states;
 
     #[test]
     fn test_usage() {
-        let _ = render_states;
+        let dir = tempfile::tempdir().unwrap();
+        let staging = deliver::Artifact::staging_root(dir.path(), "ui");
+        let rendered = render_states(
+            &scene_with("ui", &["rest"], None),
+            &fast_config(dir.path()),
+            &staging,
+        )
+        .unwrap();
+        assert_eq!(rendered.len(), 1);
+        assert_eq!(rendered[0].pixel_hash.len(), deliver::HASH_CHARS);
     }
 }

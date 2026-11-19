@@ -23,6 +23,6 @@ mod tests {
     fn test_usage() {
         let guard = Guard::from("drop_smoke");
         drop(&guard);
-        std::mem::forget(guard);
+        assert_eq!(guard.name, "drop_smoke");
     }
 }

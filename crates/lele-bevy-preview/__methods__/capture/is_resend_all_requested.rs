@@ -12,6 +12,10 @@ mod tests {
 
     #[test]
     fn test_usage() {
-        let _ = is_resend_all_requested();
+        unsafe { std::env::set_var("LELE_PREVIEW_RESEND_ALL", "1") };
+        assert!(is_resend_all_requested());
+        unsafe { std::env::set_var("LELE_PREVIEW_RESEND_ALL", "false") };
+        assert!(!is_resend_all_requested());
+        unsafe { std::env::remove_var("LELE_PREVIEW_RESEND_ALL") };
     }
 }

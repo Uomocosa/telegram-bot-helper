@@ -30,10 +30,23 @@ pub fn spawn_offscreen_ui_camera(app: &mut App, config: &preview::Config) -> Han
 
 #[cfg(test)]
 mod tests {
+    use bevy::prelude::{App, Entity, Handle, With};
+
+    use crate::PreviewApp;
+    use crate::testing::fast_config;
+
     use super::spawn_offscreen_ui_camera;
 
     #[test]
     fn test_usage() {
-        let _ = spawn_offscreen_ui_camera;
+        let dir = tempfile::tempdir().unwrap();
+        let config = fast_config(dir.path());
+        let mut app = App::new();
+        PreviewApp::add_headless_plugins(&mut app);
+        let target = spawn_offscreen_ui_camera(&mut app, &config);
+        assert_ne!(target, Handle::default());
+        let world = app.world_mut();
+        let mut cameras = world.query_filtered::<Entity, With<bevy::camera::RenderTarget>>();
+        assert_eq!(cameras.iter(world).count(), 1);
     }
 }

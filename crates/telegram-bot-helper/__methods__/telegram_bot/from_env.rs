@@ -21,6 +21,14 @@ mod tests {
 
     #[test]
     fn test_usage() {
-        let _ = from_env();
+        unsafe { std::env::set_var("TELEGRAM_BOT_TOKEN", "123:test") };
+        unsafe { std::env::set_var("TELEGRAM_CHAT_ID", "42") };
+        let bot = from_env();
+        assert!(bot.is_some());
+        let bot = bot.unwrap();
+        assert_eq!(bot.token, "123:test");
+        assert_eq!(bot.chat_id, "42");
+        unsafe { std::env::remove_var("TELEGRAM_BOT_TOKEN") };
+        unsafe { std::env::remove_var("TELEGRAM_CHAT_ID") };
     }
 }

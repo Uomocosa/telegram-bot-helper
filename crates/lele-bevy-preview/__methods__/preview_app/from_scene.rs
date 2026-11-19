@@ -19,10 +19,19 @@ pub fn from_scene(scene: &scene::Scene, config: &preview::Config) -> PreviewApp 
 
 #[cfg(test)]
 mod tests {
+    use bevy::prelude::Handle;
+
+    use crate::testing::fast_config;
+    use crate::testing::scene_with;
+
     use super::from_scene;
 
     #[test]
     fn test_usage() {
-        let _ = from_scene;
+        let dir = tempfile::tempdir().unwrap();
+        let config = fast_config(dir.path());
+        let app = from_scene(&scene_with("demo", &["one room"], None), &config);
+        assert_ne!(app.target, Handle::default());
+        assert_eq!(app.config.out_dir, dir.path());
     }
 }

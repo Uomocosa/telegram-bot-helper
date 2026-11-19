@@ -29,6 +29,11 @@ mod tests {
 
     #[test]
     fn test_usage() {
-        let _ = send_album;
+        unsafe { std::env::set_var("TELEGRAM_BOT_TOKEN", "") };
+        unsafe { std::env::set_var("TELEGRAM_CHAT_ID", "") };
+        let sent = send_album(&[], "caption").unwrap();
+        unsafe { std::env::remove_var("TELEGRAM_BOT_TOKEN") };
+        unsafe { std::env::remove_var("TELEGRAM_CHAT_ID") };
+        assert_eq!(sent, 0);
     }
 }

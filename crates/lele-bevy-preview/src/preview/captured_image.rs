@@ -24,10 +24,13 @@ impl CapturedImage {
 
 #[cfg(test)]
 mod tests {
-    use super::CapturedImage;
+    use crate::testing::captured;
 
     #[test]
     fn test_usage() {
-        let _ = CapturedImage::ensure_visual;
+        let image = captured(&[[1, 2, 3, 255], [1, 2, 3, 255]]);
+        let colors = image.distinct_colors();
+        assert_eq!(colors, 1);
+        assert_eq!(image.bytes().len(), 8);
     }
 }

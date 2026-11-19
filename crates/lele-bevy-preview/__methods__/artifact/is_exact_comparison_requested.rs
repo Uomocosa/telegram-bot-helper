@@ -12,6 +12,10 @@ mod tests {
 
     #[test]
     fn test_usage() {
-        let _ = is_exact_comparison_requested();
+        unsafe { std::env::set_var("LELE_PREVIEW_EXACT", "true") };
+        assert!(is_exact_comparison_requested());
+        unsafe { std::env::set_var("LELE_PREVIEW_EXACT", "0") };
+        assert!(!is_exact_comparison_requested());
+        unsafe { std::env::remove_var("LELE_PREVIEW_EXACT") };
     }
 }

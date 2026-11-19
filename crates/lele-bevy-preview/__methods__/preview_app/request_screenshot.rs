@@ -35,10 +35,25 @@ pub fn request_screenshot(
 
 #[cfg(test)]
 mod tests {
+    use crate::PreviewApp;
+    use crate::preview;
+    use crate::testing::fast_config;
+    use crate::testing::scene_with;
+
     use super::request_screenshot;
 
     #[test]
     fn test_usage() {
-        let _ = request_screenshot;
+        let dir = tempfile::tempdir().unwrap();
+        let mut app = PreviewApp::from_scene(
+            &scene_with("demo", &["one room"], None),
+            &fast_config(dir.path()),
+        );
+        let out = dir.path().join("frame.png");
+        let target = app.target.clone();
+        let image = request_screenshot(&mut app, target, &out, 240);
+        let image = image.unwrap();
+        assert_eq!(image.width(), preview::DEFAULT_WIDTH);
+        assert_eq!(image.height(), preview::DEFAULT_HEIGHT);
     }
 }

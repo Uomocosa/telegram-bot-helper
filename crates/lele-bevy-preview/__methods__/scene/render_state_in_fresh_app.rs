@@ -22,10 +22,21 @@ pub fn render_state_in_fresh_app(
 
 #[cfg(test)]
 mod tests {
+    use crate::deliver;
+    use crate::testing::fast_config;
+    use crate::testing::scene_with;
+
     use super::render_state_in_fresh_app;
 
     #[test]
     fn test_usage() {
-        let _ = render_state_in_fresh_app;
+        let dir = tempfile::tempdir().unwrap();
+        let scene = scene_with("ui", &["rest"], None);
+        let out = dir.path().join("state.png");
+        let hash =
+            render_state_in_fresh_app(&scene, &fast_config(dir.path()), &scene.states[0], &out)
+                .unwrap();
+        assert_eq!(hash.len(), deliver::HASH_CHARS);
+        assert!(out.exists());
     }
 }

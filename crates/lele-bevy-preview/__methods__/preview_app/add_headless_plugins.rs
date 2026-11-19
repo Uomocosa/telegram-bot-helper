@@ -17,10 +17,15 @@ pub fn add_headless_plugins(app: &mut App) {
 
 #[cfg(test)]
 mod tests {
+    use bevy::prelude::App;
+
     use super::add_headless_plugins;
 
     #[test]
     fn test_usage() {
-        let _ = add_headless_plugins;
+        let mut app = App::new();
+        add_headless_plugins(&mut app);
+        assert!(app.is_plugin_added::<bevy::time::TimePlugin>());
+        assert!(!app.is_plugin_added::<bevy::winit::WinitPlugin>());
     }
 }

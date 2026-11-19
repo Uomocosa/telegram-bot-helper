@@ -24,7 +24,9 @@ mod tests {
     use super::announce_artifacts;
 
     #[test]
-    fn test_usage() {
+    fn announcing_an_empty_delivery_does_not_panic() {
         announce_artifacts(&[], None);
     }
 }
+
+// no test_usage necessary

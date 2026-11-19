@@ -10,6 +10,10 @@ mod tests {
 
     #[test]
     fn test_usage() {
-        let _ = is_status_reporting_enabled();
+        unsafe { std::env::set_var("TELEGRAM_NOTIFY_STATUS", "1") };
+        assert!(is_status_reporting_enabled());
+        unsafe { std::env::set_var("TELEGRAM_NOTIFY_STATUS", "0") };
+        assert!(!is_status_reporting_enabled());
+        unsafe { std::env::remove_var("TELEGRAM_NOTIFY_STATUS") };
     }
 }
