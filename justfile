@@ -24,11 +24,13 @@ resend-all-previews:
     LELE_PREVIEW_RESEND_ALL=1 VK_ICD_FILENAMES={{ _lavapipe }} cargo nextest run ui_png_preview ui_mp4_preview ui_scene_preview --all-features
 
 lint:
+    lele-lint --config lele.toml --sync-config --check crates/telegram-bot-helper
     lele-lint crates/telegram-bot-helper
     lele-lint crates/telegram-bot-helper-macros
     lele-lint crates/lele-bevy-preview
 
 bevy-lint:
+    lele-bevy-lint --config lele.toml --sync-config --check crates/lele-bevy-preview
     lele-bevy-lint crates/lele-bevy-preview
 
 setup:
