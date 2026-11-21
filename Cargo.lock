@@ -404,8 +404,8 @@ dependencies = [
 
 [[package]]
 name = "atomic-delegate-macros"
-version = "0.0.15"
-source = "git+https://github.com/Uomocosa/lele-rust-linter?tag=v0.0.15#f50fc1caf3345ea85f2bfa6503d858944c9296ad"
+version = "0.0.16"
+source = "git+https://github.com/Uomocosa/lele-rust-linter?tag=v0.0.16#d283534636af3f4950233a3ecfeee257d4a49e96"
 dependencies = [
  "lele-snake-case",
  "proc-macro2",
@@ -3561,7 +3561,7 @@ checksum = "20870f649af7073d53e38067b2a84312175d56ea15217e1b15bc83506ec50afb"
 
 [[package]]
 name = "lele-bevy-preview"
-version = "0.0.19"
+version = "0.0.20"
 dependencies = [
  "atomic-delegate-macros",
  "bevy",
@@ -3577,8 +3577,8 @@ dependencies = [
 
 [[package]]
 name = "lele-snake-case"
-version = "0.0.15"
-source = "git+https://github.com/Uomocosa/lele-rust-linter?tag=v0.0.15#f50fc1caf3345ea85f2bfa6503d858944c9296ad"
+version = "0.0.16"
+source = "git+https://github.com/Uomocosa/lele-rust-linter?tag=v0.0.16#d283534636af3f4950233a3ecfeee257d4a49e96"
 
 [[package]]
 name = "lexical"
@@ -5511,7 +5511,7 @@ checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
 
 [[package]]
 name = "telegram-bot-helper"
-version = "0.0.19"
+version = "0.0.20"
 dependencies = [
  "atomic-delegate-macros",
  "chrono",
@@ -5526,7 +5526,7 @@ dependencies = [
 
 [[package]]
 name = "telegram-bot-helper-macros"
-version = "0.0.19"
+version = "0.0.20"
 dependencies = [
  "proc-macro2",
  "quote",
